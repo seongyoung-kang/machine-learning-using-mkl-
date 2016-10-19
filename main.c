@@ -6,8 +6,8 @@
 
 int main(int argc, char **argv)
 {
-	/* 
-		TODO(casionwoo) :  
+	/*
+		TODO(casionwoo) :
 
 		Generate network struct
 		send the configuration file_path to network object
@@ -27,5 +27,7 @@ int main(int argc, char **argv)
 	// run the training
 	update(sgd);
 
+    printf("program end\n");
 
+    return 0;
 }

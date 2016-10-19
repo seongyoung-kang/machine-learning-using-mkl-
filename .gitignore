@@ -74,3 +74,5 @@ cscope.po.out
 
 ### JEUNGWOO YOO ###
 dump
+*.swp
+mnist
