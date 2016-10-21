@@ -1,13 +1,10 @@
 #include "network.h"
-#include "jsmn/jsmn.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define USE_MNIST_LOADER
 #define MNIST_DOUBLE
 #include "mnist/mnist.h"
-#include <time.h>
 #include <math.h>
 
 double randn(void);
