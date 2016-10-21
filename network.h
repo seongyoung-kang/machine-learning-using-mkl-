@@ -2,6 +2,7 @@
 #define __NETWORK_H__
 
 #include "jsmn/jsmn.h"
+#include "timeutils.h"
 
 #define TOTAL_NEURONS(net_p)     AC_NEURONS(net_p, net_p->num_layer-1)
 #define TOTAL_WEIGHTS(net_p)     AC_WEIGHTS(net_p, net_p->num_layer-2)
@@ -37,6 +38,8 @@ struct network {
 	char *train_q_name, *train_a_name;
 	char *test_q_name , *test_a_name;
 
+	char *report_file;
+
 	unsigned int nr_train_data;
 	unsigned int nr_test_data;
 
@@ -58,6 +61,12 @@ struct network {
 	int mini_batch_size;
 	int epoch;
 
+	int best_recog;
+
+	timeutils t_feedforward;
+	timeutils t_back_pass;
+	timeutils t_backpropagation;
+
 };
 
 // TODO(casionwoo) : bellow functions would be located in each proper directory and called by function pointer
@@ -78,5 +87,7 @@ void learner(struct network *net);
 int evaluator(struct network *net);
 
 void run(struct network *net, char *conf_file_path);
+
+void report(struct network *net);
 
 #endif /* __NETWORK_H__ */

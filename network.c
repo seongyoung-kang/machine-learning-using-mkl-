@@ -1,11 +1,11 @@
 #include "network.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <timeutils.h>
 
 #define USE_MNIST_LOADER
 #define MNIST_DOUBLE
 #include "mnist/mnist.h"
+#include "timeutils.h"
 #include <math.h>
 
 double randn(void);
@@ -18,24 +18,17 @@ char *read_conf_file(char *conf_name);
 void run(struct network *net, char *conf_file_path)
 {
 
-	timeutils t_init, t_reader, t_update;
-
 	// Initialze from configuration file
-	START_TIME(t_init);
 	initializer(net, conf_file_path);
-	END_TIME(t_init);
-
-
 
 	// read and fill up network input later
-	START_TIME(t_reader);
 	reader(net);
-	END_TIME(t_reader);
 
 	// run the training
-	START_TIME(t_update);
 	update(net);
-	END_TIME(t_update);
+
+	// report to the file
+	report(net);
 }
 
 /* Init network struct from configuration file */
@@ -45,6 +38,8 @@ void initializer(struct network *net, char *conf_fname)
 	int before_ac_weights = 0;
 	int before_ac_neurals = 0;
 	char *conf_str = read_conf_file(conf_fname);
+
+	net->best_recog = 0.0;
 
 	net->tokens = json_parsing(conf_str, &net->nr_tokens);
 	net->num_layer = atoi((char *) parse_value(net->tokens, conf_str, "num_layer", net->nr_tokens));
@@ -60,6 +55,7 @@ void initializer(struct network *net, char *conf_fname)
 	net->train_a_name = (char *) parse_value(net->tokens, conf_str, "train_a", net->nr_tokens);
 	net->test_q_name = (char *) parse_value(net->tokens, conf_str, "test_q", net->nr_tokens);
 	net->test_a_name = (char *) parse_value(net->tokens, conf_str, "test_a", net->nr_tokens);
+	net->report_file = (char *) parse_value(net->tokens, conf_str, "report_file", net->nr_tokens);
 
 
 	for (i = 0; i < net->num_layer; i++) {
@@ -142,6 +138,8 @@ void update(struct network *net)
 	int nr_loop = (int)(net->nr_train_data/net->mini_batch_size);
 	int first_layer_size = AC_NEURONS(net, 0);
 	int last_layer_size = net->layer_size[net->num_layer-1];
+	int recog = 0;
+
 
 	// initialize the first input layer of neuron
 	for (i = 0; i < net->epoch; i++) {
@@ -161,7 +159,10 @@ void update(struct network *net)
 			learner(net);
 		}
 		// test per every epoch
-		printf("%dth epoch %d / %d\n", i, evaluator(net), net->nr_test_data);
+		recog = evaluator(net);
+		if (recog > net->best_recog)
+			net->best_recog = recog;
+		printf("%dth epoch %d / %d\n", i, recog, net->nr_test_data);
 	}
 }
 
@@ -172,6 +173,7 @@ void learner(struct network *net)
 	double sum = 0.0;
 
 	// feedforward
+	START_TIME(net->t_feedforward);
     sum = 0.0;
 	for (i = 0; i < net->num_layer-1; i++) {
 		for (j = 0; j < net->mini_batch_size; j++) {
@@ -186,7 +188,9 @@ void learner(struct network *net)
 			}
 		}
 	}
+	END_TIME(net->t_feedforward);
 
+	START_TIME(net->t_back_pass);
 	// calculate delta
 	for (i = 0; i < net->mini_batch_size; i++) {
 		for (j = 0; j < net->layer_size[net->num_layer-1]; j++) {
@@ -210,11 +214,13 @@ void learner(struct network *net)
 			}
 		}
 	}
+	END_TIME(net->t_back_pass);
 
 	double delta_sum = 0.0;
 	double eta = net->learning_rate;
 	double mini = (double) net->mini_batch_size;
 
+	START_TIME(net->t_backpropagation);
 	// update bias
 	delta_sum = 0.0;
 	for (i = 1; i < net->num_layer; i++) {
@@ -241,6 +247,7 @@ void learner(struct network *net)
 			}
 		}
 	}
+	END_TIME(net->t_backpropagation);
 }
 
 static double sigmoid(double z)
@@ -299,6 +306,40 @@ int evaluator(struct network *net)
 	}
 
 	return nr_true;
+}
+
+void report(struct network *net)
+{
+
+	int i = 0;
+	FILE *f = fopen(net->report_file, "w");
+	if (f == NULL) {
+		printf("%s open failed\n", net->report_file);
+		exit(1);
+	}
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "SGD \n");
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "mini_batch_size : %d\n", net->mini_batch_size);
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "num_layer : %d\n", net->num_layer);
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "layers : [");
+	printf("%s[%d]\n", __func__, __LINE__);
+	for (i = 0; i < net->num_layer; i++) {
+		fprintf( f, "%d ", net->layer_size[i]);
+	}
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "]\n");
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "epoch : %d\n", net->epoch);
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "learning_rate : %f\n", net->learning_rate);
+	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "recog : %d/%d\n", net->best_recog, net->nr_test_data);
+	printf("%s[%d]\n", __func__, __LINE__);
+
+	fclose(f);
 }
 
 char *read_conf_file(char *conf_name)

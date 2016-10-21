@@ -20,6 +20,7 @@ INCLUDE += $(LIB_PATH)
 
 CFLAGS += -I$(INCLUDE)
 CFLAGS += -g
+#CFLAGS += -fopenmp
 
 all: ${ELF}
 
