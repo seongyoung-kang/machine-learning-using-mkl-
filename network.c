@@ -317,27 +317,20 @@ void report(struct network *net)
 		printf("%s open failed\n", net->report_file);
 		exit(1);
 	}
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "SGD \n");
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "mini_batch_size : %d\n", net->mini_batch_size);
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "num_layer : %d\n", net->num_layer);
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "layers : [");
-	printf("%s[%d]\n", __func__, __LINE__);
 	for (i = 0; i < net->num_layer; i++) {
 		fprintf( f, "%d ", net->layer_size[i]);
 	}
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "]\n");
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "epoch : %d\n", net->epoch);
-	printf("%s[%d]\n", __func__, __LINE__);
 	fprintf( f, "learning_rate : %f\n", net->learning_rate);
-	printf("%s[%d]\n", __func__, __LINE__);
-	fprintf( f, "recog : %d/%d\n", net->best_recog, net->nr_test_data);
-	printf("%s[%d]\n", __func__, __LINE__);
+	fprintf( f, "recognization rate : %d/%d\n", net->best_recog, net->nr_test_data);
+	fprintf( f, "feedforward : %ld\n", net->t_feedforward);
+	fprintf( f, "back_pass : %ld\n", net->t_back_pass);
+	fprintf( f, "backpropagation : %ld\n", net->t_backpropagation);
 
 	fclose(f);
 }
