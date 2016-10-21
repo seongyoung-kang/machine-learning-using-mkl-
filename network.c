@@ -331,10 +331,10 @@ void report(struct network *net)
 
 	fprintf( f, "========TIMES======\n");
 
-	fprintf( f, "feedforward : %ld sec\n", TOTAL_SEC_TIME(net->t_feedforward));
-	fprintf( f, "back_pass : %ld sec\n", TOTAL_SEC_TIME(net->t_back_pass));
-	fprintf( f, "backpropagation : %ld sec\n", TOTAL_SEC_TIME(net->t_backpropagation));
-	fprintf( f, "total : %ld sec\n", 
+	fprintf( f, "feedforward : %f sec\n", TOTAL_SEC_TIME(net->t_feedforward));
+	fprintf( f, "back_pass : %f sec\n", TOTAL_SEC_TIME(net->t_back_pass));
+	fprintf( f, "backpropagation : %f sec\n", TOTAL_SEC_TIME(net->t_backpropagation));
+	fprintf( f, "total : %f sec\n", 
 		TOTAL_SEC_TIME(net->t_feedforward) + 
 		TOTAL_SEC_TIME(net->t_back_pass) +
 		TOTAL_SEC_TIME(net->t_backpropagation));
