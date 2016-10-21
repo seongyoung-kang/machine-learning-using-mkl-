@@ -10,7 +10,7 @@
 #include <time.h>
 #include <math.h>
 
-double gaussianRandom(void);
+double randn(void);
 static void print_error(struct network *net, enum DATA_T t, int layer);
 static double sigmoid(double z);
 static double sigmoid_prime(double z);
@@ -60,13 +60,11 @@ void initializer(struct network *net, char *conf_fname)
 
 	// init weight with bias with random values
 	for (i = 0; i < TOTAL_WEIGHTS(net); i++) {
-        net->weight[i] = gaussianRandom();
-//		net->weight[i] = (double)rand()/(RAND_MAX/2)-1;
+        net->weight[i] = randn();
 	}
 
 	for (i = 0; i < TOTAL_NEURONS(net); i++) {
-        net->bias[i] = gaussianRandom();
-//		net->bias[i] = (double)rand()/(RAND_MAX/2)-1;
+        net->bias[i] = randn();
 	}
 
 	free(conf_str);
@@ -421,7 +419,7 @@ static void print_error(struct network *net, enum DATA_T t, int layer)
 
 }
 
-double gaussianRandom(void)
+double randn(void)
 {
     double v1, v2, s;
 
