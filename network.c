@@ -328,9 +328,12 @@ void report(struct network *net)
 	fprintf( f, "epoch : %d\n", net->epoch);
 	fprintf( f, "learning_rate : %f\n", net->learning_rate);
 	fprintf( f, "recognization rate : %d/%d\n", net->best_recog, net->nr_test_data);
-	fprintf( f, "feedforward : %ld\n", net->t_feedforward);
-	fprintf( f, "back_pass : %ld\n", net->t_back_pass);
-	fprintf( f, "backpropagation : %ld\n", net->t_backpropagation);
+
+	fprintf( f, "========TIMES======\n");
+
+	fprintf( f, "feedforward : %ld sec\n", TOTAL_SEC_TIME(net->t_feedforward));
+	fprintf( f, "back_pass : %ld sec\n", TOTAL_SEC_TIME(net->t_back_pass));
+	fprintf( f, "backpropagation : %ld sec\n", TOTAL_SEC_TIME(net->t_backpropagation));
 
 	fclose(f);
 }
