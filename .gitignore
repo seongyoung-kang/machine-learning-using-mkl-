@@ -76,3 +76,4 @@ cscope.po.out
 dump
 *.swp
 mnist
+./result/*
