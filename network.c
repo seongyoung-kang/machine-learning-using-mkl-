@@ -1,6 +1,7 @@
 #include "network.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <timeutils.h>
 
 #define USE_MNIST_LOADER
 #define MNIST_DOUBLE
@@ -13,6 +14,29 @@ static double sigmoid(double z);
 static double sigmoid_prime(double z);
 static void print_arr(enum DATA_T t, struct network *net, char *func, int line);
 char *read_conf_file(char *conf_name);
+
+void run(struct network *net, char *conf_file_path)
+{
+
+	timeutils t_init, t_reader, t_update;
+
+	// Initialze from configuration file
+	START_TIME(t_init);
+	initializer(net, conf_file_path);
+	END_TIME(t_init);
+
+
+
+	// read and fill up network input later
+	START_TIME(t_reader);
+	reader(net);
+	END_TIME(t_reader);
+
+	// run the training
+	START_TIME(t_update);
+	update(net);
+	END_TIME(t_update);
+}
 
 /* Init network struct from configuration file */
 void initializer(struct network *net, char *conf_fname)

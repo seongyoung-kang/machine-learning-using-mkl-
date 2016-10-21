@@ -77,4 +77,6 @@ void learner(struct network *net);
 /* evaluator to show how it works well */
 int evaluator(struct network *net);
 
+void run(struct network *net, char *conf_file_path);
+
 #endif /* __NETWORK_H__ */
