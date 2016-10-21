@@ -20,8 +20,8 @@ typedef struct timeutils {
 	struct timeval stime;
 	struct timeval etime;
 
-	long total_sec;
-	long total_usec;
+	long long total_sec;
+	long long total_usec;
 } timeutils;
 
 #endif /* __TIME_UTILS_H__ */
