@@ -17,6 +17,8 @@ static double sigmoid_prime(double z);
 static void print_arr(enum DATA_T t, struct network *net, char *func, int line);
 char *read_conf_file(char *conf_name);
 
+int nr_thread = 100;
+
 void run(struct network *net, char *conf_file_path)
 {
 
@@ -145,6 +147,7 @@ void update(struct network *net)
 
 	// initialize the first input layer of neuron
 	for (i = 0; i < net->epoch; i++) {
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l)
 		for (j = 0; j < nr_loop; j++) {
 
 			// copy input and output for SGD
@@ -182,7 +185,7 @@ void learner(struct network *net)
 	START_TIME(feedforward);
     sum = 0.0;
 	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(30) private(j, k, l) reduction(+:sum)
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
 				for (l = 0; l < net->layer_size[i]; l++) {
@@ -199,7 +202,7 @@ void learner(struct network *net)
 
 	START_TIME(back_pass);
 	// calculate delta
-#pragma omp parallel for num_threads(30) private(i, j)
+#pragma omp parallel for num_threads(nr_thread) private(i, j)
 	for (i = 0; i < net->mini_batch_size; i++) {
 		for (j = 0; j < net->layer_size[net->num_layer-1]; j++) {
 			//	calculate delta in last output layer
@@ -211,7 +214,7 @@ void learner(struct network *net)
 
 	sum = 0.0;
 	for (i = net->num_layer-2; i > 0; i--) {
-#pragma omp parallel for num_threads(30) private(j, k, l) reduction(+:sum)
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i]; k++) {
 				for (l = 0; l < net->layer_size[i+1]; l++) {
@@ -232,7 +235,7 @@ void learner(struct network *net)
 	START_TIME(backpropagation);
 	// update bias
 	delta_sum = 0.0;
-#pragma omp parallel for num_threads(30) private(i, j, k) reduction(+:delta_sum)
+#pragma omp parallel for num_threads(nr_thread) private(i, j, k) reduction(+:delta_sum)
 	for (i = 1; i < net->num_layer; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->mini_batch_size; k++) {
@@ -245,7 +248,7 @@ void learner(struct network *net)
 
 	// update weight
 	delta_sum = 0.0;
-#pragma omp parallel for num_threads(30) private(i, j, k, l) reduction(+:delta_sum)
+#pragma omp parallel for num_threads(nr_thread) private(i, j, k, l) reduction(+:delta_sum)
 	for (i = 0; i < net->num_layer-1; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
@@ -346,8 +349,8 @@ void report(struct network *net)
 	fprintf( f, "========TIMES======\n");
 
 	fprintf( f, "feedforward : %ld.%d sec\n", TOTAL_SEC_TIME(feedforward), TOTAL_SEC_UTIME(feedforward));
-	fprintf( f, "back_pass : %ld.%d sec\n", TOTAL_SEC_TIME(back_pass), TOTAL_SEC_UTIME(feedforward));
-	fprintf( f, "backpropagation : %ld.%d sec\n", TOTAL_SEC_TIME(backpropagation), TOTAL_SEC_UTIME(feedforward));
+	fprintf( f, "back_pass : %ld.%d sec\n", TOTAL_SEC_TIME(back_pass), TOTAL_SEC_UTIME(back_pass));
+	fprintf( f, "backpropagation : %ld.%d sec\n", TOTAL_SEC_TIME(backpropagation), TOTAL_SEC_UTIME(backpropagation));
 	fprintf( f, "total : %ld.%d sec\n",
 		TOTAL_SEC_TIME(feedforward) + TOTAL_SEC_TIME(back_pass) + TOTAL_SEC_TIME(backpropagation),
 		TOTAL_SEC_UTIME(feedforward) + TOTAL_SEC_UTIME(back_pass) + TOTAL_SEC_UTIME(backpropagation)
