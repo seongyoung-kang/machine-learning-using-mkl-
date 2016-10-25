@@ -8,7 +8,7 @@
 #define START_TIME(x)			gettimeofday(&x->stime, NULL);
 #define END_TIME(x)				do {                                                \
                                     gettimeofday(&x->etime, NULL);                  \
-								    timersub(&x->etime, &x->stime, &x->res);        \
+								    timersub(&x->stime, &x->etime, &x->res);        \
                                     x->total_sec += x->res.tv_sec;                  \
 								    x->total_usec += x->res.tv_usec;                \
                                 } while(0)
@@ -21,8 +21,8 @@ typedef struct timeutils {
 	struct timeval etime;
     struct timeval res;
 
-	double total_sec;
-	double total_usec;
+	long total_sec;
+	long total_usec;
 } timeutils;
 
 #endif /* __TIME_UTILS_H__ */

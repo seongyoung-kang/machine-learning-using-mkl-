@@ -1,7 +1,0 @@
-SGD 
-mini_batch_size : 10
-num_layer : 3
-layers : [784 30 10 ]
-epoch : 1
-learning_rate : 3.000000
-recog : 9099/10000

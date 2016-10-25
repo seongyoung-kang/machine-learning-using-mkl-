@@ -232,6 +232,7 @@ void learner(struct network *net)
 	START_TIME(backpropagation);
 	// update bias
 	delta_sum = 0.0;
+#pragma omp parallel for num_threads(30) private(i, j, k) reduction(+:delta_sum)
 	for (i = 1; i < net->num_layer; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->mini_batch_size; k++) {
@@ -244,6 +245,7 @@ void learner(struct network *net)
 
 	// update weight
 	delta_sum = 0.0;
+#pragma omp parallel for num_threads(30) private(i, j, k, l) reduction(+:delta_sum)
 	for (i = 0; i < net->num_layer-1; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
@@ -343,14 +345,13 @@ void report(struct network *net)
 
 	fprintf( f, "========TIMES======\n");
 
-	fprintf( f, "feedforward : %f sec\n", TOTAL_SEC_TIME(feedforward));
-	fprintf( f, "back_pass : %f sec\n", TOTAL_SEC_TIME(back_pass));
-	fprintf( f, "backpropagation : %f sec\n", TOTAL_SEC_TIME(backpropagation));
-	fprintf( f, "total : %f sec\n",
-		TOTAL_SEC_TIME(feedforward) +
-		TOTAL_SEC_TIME(back_pass) +
-		TOTAL_SEC_TIME(backpropagation));
-
+	fprintf( f, "feedforward : %ld.%d sec\n", TOTAL_SEC_TIME(feedforward), TOTAL_SEC_UTIME(feedforward));
+	fprintf( f, "back_pass : %ld.%d sec\n", TOTAL_SEC_TIME(back_pass), TOTAL_SEC_UTIME(feedforward));
+	fprintf( f, "backpropagation : %ld.%d sec\n", TOTAL_SEC_TIME(backpropagation), TOTAL_SEC_UTIME(feedforward));
+	fprintf( f, "total : %ld.%d sec\n",
+		TOTAL_SEC_TIME(feedforward) + TOTAL_SEC_TIME(back_pass) + TOTAL_SEC_TIME(backpropagation),
+		TOTAL_SEC_UTIME(feedforward) + TOTAL_SEC_UTIME(back_pass) + TOTAL_SEC_UTIME(backpropagation)
+        );
 	fclose(f);
 }
 
