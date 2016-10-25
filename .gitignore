@@ -77,3 +77,4 @@ dump
 *.swp
 mnist
 result/*
+*.optrpt
