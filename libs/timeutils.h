@@ -5,20 +5,21 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#define DIFF_TIME_SEC(x)		((double)(x.etime.tv_sec - x.stime.tv_sec))
-#define DIFF_TIME_USEC(x)		((double)(x.etime.tv_usec - x.stime.tv_usec))
+#define START_TIME(x)			gettimeofday(&x->stime, NULL);
+#define END_TIME(x)				do {                                                \
+                                    gettimeofday(&x->etime, NULL);                  \
+								    timersub(&x->etime, &x->stime, &x->res);        \
+                                    x->total_sec += x->res.tv_sec;                  \
+								    x->total_usec += x->res.tv_usec;                \
+                                } while(0)
 
-#define START_TIME(x)			gettimeofday(&(x.stime), NULL)
-#define END_TIME(x)				gettimeofday(&(x.etime), NULL); 		\
-								x.total_sec += DIFF_TIME_SEC(x);		\
-								x.total_usec += DIFF_TIME_USEC(x)		\
-
-#define TOTAL_SEC_TIME(x)		(x.total_sec)
-#define TOTAL_SEC_UTIME(x)		(x.total_usec)
+#define TOTAL_SEC_TIME(x)		(x->total_sec)
+#define TOTAL_SEC_UTIME(x)		(x->total_usec)
 
 typedef struct timeutils {
 	struct timeval stime;
 	struct timeval etime;
+    struct timeval res;
 
 	double total_sec;
 	double total_usec;

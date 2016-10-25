@@ -1,4 +1,4 @@
-CC=gcc
+CC=icc
 ELF=mnist
 
 ROOT_PATH= .
@@ -10,17 +10,13 @@ FORWARDER_PATH= ./forwarder
 LEARNER_PATH= ./learner
 READER_PATH= ./reader
 
-# OBJS += $(EVALUATOR_PATH)/
-# OBJS += $(FORWARDER_PATH)/
-# OBJS += $(LEARNER_PATH)/
-# OBJS += $(READER_PATH)/
-
 OBJS += main.o network.o jsmn.o
 INCLUDE += $(LIB_PATH)
 
 CFLAGS += -I$(INCLUDE)
 CFLAGS += -g
-#CFLAGS += -fopenmp
+CFLAGS += -qopenmp
+CFLAGS += -qopt-report -qopt-report-phase=loop,vec
 
 all: ${ELF}
 

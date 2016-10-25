@@ -22,20 +22,13 @@ int main(int argc, char **argv)
 	int i = 0;
 	struct network *sgd;
 
-//	for (i = 0; i < 10; i++){
+    if ((sgd = (struct network *) malloc(sizeof(struct network))) == NULL) {
+        printf("sgd struct generate failed\n");
+        exit(1);
+    }
 
-
-		if ((sgd = (struct network *) malloc(sizeof(struct network))) == NULL) {
-			printf("sgd struct generate failed\n");
-			exit(1);
-		}
-
-		run(sgd, CONF_FILES[i]);
-        free(sgd);
-//	}
-	// TODO(casionwoo) : report the result 
-	// 1) print
-	// 2) file
+    run(sgd, CONF_FILES[i]);
+    free(sgd);
 
     return 0;
 }

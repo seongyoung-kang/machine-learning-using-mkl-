@@ -8,6 +8,8 @@
 #include "timeutils.h"
 #include <math.h>
 
+#include <omp.h>
+
 double randn(void);
 static void print_error(struct network *net, enum DATA_T t, int layer);
 static double sigmoid(double z);
@@ -171,11 +173,16 @@ void learner(struct network *net)
 {
 	int i, j, k, l;
 	double sum = 0.0;
+    timeutils *feedforward = &net->t_feedforward;
+    timeutils *back_pass = &net->t_back_pass;
+    timeutils *backpropagation = &net->t_backpropagation;
+
 
 	// feedforward
-	START_TIME(net->t_feedforward);
+	START_TIME(feedforward);
     sum = 0.0;
 	for (i = 0; i < net->num_layer-1; i++) {
+#pragma omp parallel for num_threads(30) private(j, k, l) reduction(+:sum)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
 				for (l = 0; l < net->layer_size[i]; l++) {
@@ -188,10 +195,11 @@ void learner(struct network *net)
 			}
 		}
 	}
-	END_TIME(net->t_feedforward);
+	END_TIME(feedforward);
 
-	START_TIME(net->t_back_pass);
+	START_TIME(back_pass);
 	// calculate delta
+#pragma omp parallel for num_threads(30) private(i, j)
 	for (i = 0; i < net->mini_batch_size; i++) {
 		for (j = 0; j < net->layer_size[net->num_layer-1]; j++) {
 			//	calculate delta in last output layer
@@ -203,6 +211,7 @@ void learner(struct network *net)
 
 	sum = 0.0;
 	for (i = net->num_layer-2; i > 0; i--) {
+#pragma omp parallel for num_threads(30) private(j, k, l) reduction(+:sum)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i]; k++) {
 				for (l = 0; l < net->layer_size[i+1]; l++) {
@@ -214,13 +223,13 @@ void learner(struct network *net)
 			}
 		}
 	}
-	END_TIME(net->t_back_pass);
+	END_TIME(back_pass);
 
 	double delta_sum = 0.0;
 	double eta = net->learning_rate;
 	double mini = (double) net->mini_batch_size;
 
-	START_TIME(net->t_backpropagation);
+	START_TIME(backpropagation);
 	// update bias
 	delta_sum = 0.0;
 	for (i = 1; i < net->num_layer; i++) {
@@ -247,7 +256,7 @@ void learner(struct network *net)
 			}
 		}
 	}
-	END_TIME(net->t_backpropagation);
+	END_TIME(backpropagation);
 }
 
 static double sigmoid(double z)
@@ -310,14 +319,17 @@ int evaluator(struct network *net)
 
 void report(struct network *net)
 {
+    timeutils *feedforward = &net->t_feedforward;
+    timeutils *back_pass = &net->t_back_pass;
+    timeutils *backpropagation = &net->t_backpropagation;
 
 	int i = 0;
-	FILE *f = fopen(net->report_file, "w");
+	FILE *f = fopen(net->report_file, "a+");
 	if (f == NULL) {
 		printf("%s open failed\n", net->report_file);
 		exit(1);
 	}
-	fprintf( f, "SGD \n");
+	fprintf( f, "====SGD=== \n");
 	fprintf( f, "mini_batch_size : %d\n", net->mini_batch_size);
 	fprintf( f, "num_layer : %d\n", net->num_layer);
 	fprintf( f, "layers : [");
@@ -331,13 +343,13 @@ void report(struct network *net)
 
 	fprintf( f, "========TIMES======\n");
 
-	fprintf( f, "feedforward : %f sec\n", TOTAL_SEC_TIME(net->t_feedforward));
-	fprintf( f, "back_pass : %f sec\n", TOTAL_SEC_TIME(net->t_back_pass));
-	fprintf( f, "backpropagation : %f sec\n", TOTAL_SEC_TIME(net->t_backpropagation));
-	fprintf( f, "total : %f sec\n", 
-		TOTAL_SEC_TIME(net->t_feedforward) + 
-		TOTAL_SEC_TIME(net->t_back_pass) +
-		TOTAL_SEC_TIME(net->t_backpropagation));
+	fprintf( f, "feedforward : %f sec\n", TOTAL_SEC_TIME(feedforward));
+	fprintf( f, "back_pass : %f sec\n", TOTAL_SEC_TIME(back_pass));
+	fprintf( f, "backpropagation : %f sec\n", TOTAL_SEC_TIME(backpropagation));
+	fprintf( f, "total : %f sec\n",
+		TOTAL_SEC_TIME(feedforward) +
+		TOTAL_SEC_TIME(back_pass) +
+		TOTAL_SEC_TIME(backpropagation));
 
 	fclose(f);
 }
