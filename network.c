@@ -159,6 +159,8 @@ void update(struct network *net)
 				for (l = 0; l < first_layer_size; l++)
 					NEURON(net, 0, k, l) = DATA_TRAIN_Q(net, s_index, l);
 
+                for (l = 0; l < last_layer_size; l++)
+                    ERROR(net, net->num_layer-1, k, l) = 0.0;
 				// copy output to error array
 				ERROR(net, net->num_layer-1, k, DATA_TRAIN_A(net, s_index)) = 1.0;
 			}
