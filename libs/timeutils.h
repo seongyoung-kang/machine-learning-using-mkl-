@@ -8,21 +8,20 @@
 #define START_TIME(x)			gettimeofday(&x->stime, NULL);
 #define END_TIME(x)				do {                                                \
                                     gettimeofday(&x->etime, NULL);                  \
-								    timersub(&x->stime, &x->etime, &x->res);        \
-                                    x->total_sec += x->res.tv_sec;                  \
-								    x->total_usec += x->res.tv_usec;                \
+								    timersub(&x->etime, &x->stime, &x->diff);       \
+                                    timeradd(&x->diff, &x->total, &x->total);       \
                                 } while(0)
 
-#define TOTAL_SEC_TIME(x)		(x->total_sec)
-#define TOTAL_SEC_UTIME(x)		(x->total_usec)
+#define TOTAL_SEC_TIME(x)		(x->total.tv_sec)
+#define TOTAL_SEC_UTIME(x)		(x->total.tv_usec)
 
 typedef struct timeutils {
 	struct timeval stime;
 	struct timeval etime;
-    struct timeval res;
+    struct timeval diff;
 
-	long total_sec;
-	long total_usec;
+    struct timeval total;
+
 } timeutils;
 
 #endif /* __TIME_UTILS_H__ */
