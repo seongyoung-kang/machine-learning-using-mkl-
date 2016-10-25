@@ -16,6 +16,8 @@ static double sigmoid(double z);
 static double sigmoid_prime(double z);
 static void print_arr(enum DATA_T t, struct network *net, char *func, int line);
 char *read_conf_file(char *conf_name);
+static void feedforward(struct network *net);
+static void back_pass(struct network *net);
 
 int nr_thread = 100;
 
@@ -147,7 +149,7 @@ void update(struct network *net)
 
 	// initialize the first input layer of neuron
 	for (i = 0; i < net->epoch; i++) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l)
+//#pragma omp parallel for num_threads(nr_thread) private(j, k, l)
 		for (j = 0; j < nr_loop; j++) {
 
 			// copy input and output for SGD
@@ -160,8 +162,10 @@ void update(struct network *net)
 				// copy output to error array
 				ERROR(net, net->num_layer-1, k, DATA_TRAIN_A(net, s_index)) = 1.0;
 			}
-			// feedforward + backpropagation
-			learner(net);
+            // feedforward + back_pass
+            feedforward(net);
+            back_pass(net);
+            learner(net);
 		}
 		// test per every epoch
 		recog = evaluator(net);
@@ -171,34 +175,11 @@ void update(struct network *net)
 	}
 }
 
-/* Operation like backpropagation */
-void learner(struct network *net)
+static void back_pass(struct network *net)
 {
 	int i, j, k, l;
 	double sum = 0.0;
-    timeutils *feedforward = &net->t_feedforward;
     timeutils *back_pass = &net->t_back_pass;
-    timeutils *backpropagation = &net->t_backpropagation;
-
-
-	// feedforward
-	START_TIME(feedforward);
-    sum = 0.0;
-	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum)
-		for (j = 0; j < net->mini_batch_size; j++) {
-			for (k = 0; k < net->layer_size[i+1]; k++) {
-				for (l = 0; l < net->layer_size[i]; l++) {
-					sum = sum + NEURON(net, i, j, l) * WEIGHT(net, i, l, k);
-				}
-
-				ZS(net, i+1, j, k) = sum + BIAS(net, i+1, k);
-				NEURON(net, i+1, j, k) = sigmoid(ZS(net, i+1, j, k));
-				sum = 0.0;
-			}
-		}
-	}
-	END_TIME(feedforward);
 
 	START_TIME(back_pass);
 	// calculate delta
@@ -227,7 +208,39 @@ void learner(struct network *net)
 		}
 	}
 	END_TIME(back_pass);
+}
 
+static void feedforward(struct network *net)
+{
+	int i, j, k, l;
+	double sum = 0.0;
+    timeutils *feedforward = &net->t_feedforward;
+
+	// feedforward
+	START_TIME(feedforward);
+    sum = 0.0;
+	for (i = 0; i < net->num_layer-1; i++) {
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum)
+		for (j = 0; j < net->mini_batch_size; j++) {
+			for (k = 0; k < net->layer_size[i+1]; k++) {
+				for (l = 0; l < net->layer_size[i]; l++) {
+					sum = sum + NEURON(net, i, j, l) * WEIGHT(net, i, l, k);
+				}
+
+				ZS(net, i+1, j, k) = sum + BIAS(net, i+1, k);
+				NEURON(net, i+1, j, k) = sigmoid(ZS(net, i+1, j, k));
+				sum = 0.0;
+			}
+		}
+	}
+	END_TIME(feedforward);
+}
+
+/* Operation like backpropagation */
+void learner(struct network *net)
+{
+	int i, j, k, l;
+    timeutils *backpropagation = &net->t_backpropagation;
 	double delta_sum = 0.0;
 	double eta = net->learning_rate;
 	double mini = (double) net->mini_batch_size;
