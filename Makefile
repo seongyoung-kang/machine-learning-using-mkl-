@@ -33,4 +33,4 @@ jsmn.o : ${LIB_PATH}/jsmn/jsmn.c
 	$(CC) -c ${LIB_PATH}/jsmn/jsmn.c $(CFLAGS) 
 
 clean:
-	rm -rf ./*.o  rm ./mnist
+	rm -rf ./*.o  rm ./mnist rm *.optrpt
