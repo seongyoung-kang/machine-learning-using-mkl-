@@ -5,6 +5,14 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#define TIMER_INIT(x)           do {                            \
+                                    timerclear(&x->total);      \
+                                    timerclear(&x->stime);      \
+                                    timerclear(&x->etime);      \
+                                    timerclear(&x->diff);       \
+                                    timerclear(&x->total);      \
+                                } while(0)
+
 #define START_TIME(x)			gettimeofday(&x->stime, NULL);
 #define END_TIME(x)				do {                                                \
                                     gettimeofday(&x->etime, NULL);                  \

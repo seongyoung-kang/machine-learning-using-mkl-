@@ -50,8 +50,14 @@ void initializer(struct network *net, char *conf_fname)
 	int before_ac_weights = 0;
 	int before_ac_neurals = 0;
 	char *conf_str = read_conf_file(conf_fname);
+    timeutils *feedforward = &net->t_feedforward;
+    timeutils *back_pass = &net->t_back_pass;
+    timeutils *backpropagation = &net->t_backpropagation;
 
 	net->best_recog = 0.0;
+    TIMER_INIT(feedforward);
+    TIMER_INIT(back_pass);
+    TIMER_INIT(backpropagation);
 
 	net->tokens = json_parsing(conf_str, &net->nr_tokens);
 	net->num_layer = atoi((char *) parse_value(net->tokens, conf_str, "num_layer", net->nr_tokens));
@@ -346,6 +352,8 @@ void report(struct network *net)
     timeutils *backpropagation = &net->t_backpropagation;
     timeutils t;
     timeutils *total = &t;
+
+    TIMER_INIT(total);
 
 	int i = 0;
 	FILE *f = fopen(net->report_file, "a+");

@@ -15,6 +15,7 @@ INCLUDE += $(LIB_PATH)
 
 CFLAGS += -I$(INCLUDE)
 CFLAGS += -qopenmp
+#CFLAGS += -g
 CFLAGS += -qopt-report -qopt-report-phase=loop,vec
 
 all: ${ELF}
