@@ -15,6 +15,10 @@
 #define TOTAL_SEC_TIME(x)		(x->total.tv_sec)
 #define TOTAL_SEC_UTIME(x)		(x->total.tv_usec)
 
+#define TIMER_ADD(x, t)		    do {                                                \
+                                    timeradd(&x->total, &t->total, &t->total);      \
+                                } while(0)
+
 typedef struct timeutils {
 	struct timeval stime;
 	struct timeval etime;

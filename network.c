@@ -344,6 +344,8 @@ void report(struct network *net)
     timeutils *feedforward = &net->t_feedforward;
     timeutils *back_pass = &net->t_back_pass;
     timeutils *backpropagation = &net->t_backpropagation;
+    timeutils t;
+    timeutils *total = &t;
 
 	int i = 0;
 	FILE *f = fopen(net->report_file, "a+");
@@ -368,10 +370,12 @@ void report(struct network *net)
 	fprintf( f, "feedforward : %ld.%d sec\n", TOTAL_SEC_TIME(feedforward), TOTAL_SEC_UTIME(feedforward));
 	fprintf( f, "back_pass : %ld.%d sec\n", TOTAL_SEC_TIME(back_pass), TOTAL_SEC_UTIME(back_pass));
 	fprintf( f, "backpropagation : %ld.%d sec\n", TOTAL_SEC_TIME(backpropagation), TOTAL_SEC_UTIME(backpropagation));
-	fprintf( f, "total : %ld.%d sec\n",
-		TOTAL_SEC_TIME(feedforward) + TOTAL_SEC_TIME(back_pass) + TOTAL_SEC_TIME(backpropagation),
-		TOTAL_SEC_UTIME(feedforward) + TOTAL_SEC_UTIME(back_pass) + TOTAL_SEC_UTIME(backpropagation)
-        );
+
+    TIMER_ADD(feedforward, total);
+    TIMER_ADD(back_pass, total);
+    TIMER_ADD(backpropagation, total);
+
+	fprintf( f, "total : %ld.%d sec\n", TOTAL_SEC_TIME(total), TOTAL_SEC_UTIME(total));
 	fclose(f);
 }
 
