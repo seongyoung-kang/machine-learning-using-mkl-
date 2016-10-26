@@ -3,6 +3,7 @@
 
 #include "jsmn/jsmn.h"
 #include "timeutils.h"
+#include <hbwmalloc.h>
 
 #define TOTAL_NEURONS(net_p)     AC_NEURONS(net_p, net_p->num_layer-1)
 #define TOTAL_WEIGHTS(net_p)     AC_WEIGHTS(net_p, net_p->num_layer-2)
@@ -28,6 +29,14 @@
 #define DATA_TEST_A(net, i)			(net->test_a[i])
 
 #define WHILE						while(1)
+
+#ifdef HBWMODE
+#define malloc(x)     hbw_malloc(x)
+#define free(x)       hbw_free(x)
+#else
+#define malloc(x)     malloc(x)
+#define free(x)       free(x)
+#endif
 
 enum DATA_T {BIAS, WEIGHT, ERROR, ZS, NEURON};
 

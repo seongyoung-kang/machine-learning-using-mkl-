@@ -403,11 +403,13 @@ char *read_conf_file(char *conf_name)
 	rewind( fp );
 
 	/* allocate memory for entire content */
-	if ((buffer = calloc( 1, lSize+1 )) == NULL) {
+	if ((buffer = (char *)malloc(sizeof(char) * lSize+1)) == NULL) {
 		fclose(fp);
 		printf("buffer memory alloc fails\n");
 		exit(1);
 	}
+
+    memset(buffer, 0, sizeof(char) * lSize+1);
 
 	/* copy the file into the buffer */
 	if( 1!=fread( buffer , lSize, 1 , fp) ) {

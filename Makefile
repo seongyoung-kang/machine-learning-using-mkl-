@@ -17,6 +17,13 @@ CFLAGS += -I$(INCLUDE)
 CFLAGS += -qopenmp
 #CFLAGS += -g
 CFLAGS += -qopt-report -qopt-report-phase=loop,vec
+CFLAGS += -lmemkind
+CFLAGS += -L/home/memkind_build/lib
+CFLAGS += -I/home/memkind_build/include/
+
+ifneq ($(HBWMODE), )
+	CFLAGS += -DHBWMODE
+endif
 
 all: ${ELF}
 
