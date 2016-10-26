@@ -253,9 +253,10 @@ void learner(struct network *net)
 
 	START_TIME(backpropagation);
 	// update bias
-#pragma omp parallel for num_threads(nr_thread) private(i, j, k) collapse(3)
+#pragma omp parallel for num_threads(nr_thread) private(i, j, k) collapse(2)
 	for (i = 1; i < net->num_layer; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
+            #pragma omp simd
 			for (k = 0; k < net->mini_batch_size; k++) {
                 BIAS(net, i, j) -= (eta/mini)*ERROR(net, i, k, j);
 			}
@@ -264,9 +265,10 @@ void learner(struct network *net)
 
 	// update weight
 	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) collapse(3)
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) collapse(2)
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
+                #pragma omp simd
 				for (l = 0; l < net->mini_batch_size; l++) {
 					//	calculate delta from before layer
                     WEIGHT(net, i, j, k) -= (eta/mini)*(NEURON(net, i, l, j) * ERROR(net, i+1, l, k));
