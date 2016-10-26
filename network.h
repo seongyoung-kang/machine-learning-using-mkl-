@@ -41,6 +41,7 @@
 enum DATA_T {BIAS, WEIGHT, ERROR, ZS, NEURON};
 
 struct network {
+    int nr_thread;
 	int num_layer;
 	int *layer_size;
 

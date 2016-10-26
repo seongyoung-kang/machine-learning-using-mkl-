@@ -25,8 +25,6 @@ void learner(struct network *net);
 int evaluator(struct network *net);
 void report(struct network *net);
 
-int nr_thread = 100;
-
 void run(struct network *net, char *conf_file_path)
 {
 
@@ -60,6 +58,7 @@ void initializer(struct network *net, char *conf_fname)
     TIMER_INIT(backpropagation);
 
 	net->tokens = json_parsing(conf_str, &net->nr_tokens);
+    net->nr_thread = atoi((char *) parse_value(net->tokens, conf_str, "nr_thread", net->nr_tokens));
 	net->num_layer = atoi((char *) parse_value(net->tokens, conf_str, "num_layer", net->nr_tokens));
 	net->layer_size = (int *) parse_value(net->tokens, conf_str, "layer_size", net->nr_tokens);
 	net->learning_rate = strtod((char *) parse_value(net->tokens, conf_str, "learning_rate", net->nr_tokens), NULL);
@@ -196,7 +195,7 @@ void back_pass(struct network *net)
 
 	START_TIME(back_pass);
 	// calculate delta
-#pragma omp parallel for num_threads(nr_thread) private(i, j) collapse(2)
+#pragma omp parallel for num_threads(net->nr_thread) private(i, j) collapse(2)
 	for (i = 0; i < net->mini_batch_size; i++) {
 		for (j = 0; j < net->layer_size[net->num_layer-1]; j++) {
 			//	calculate delta in last output layer
@@ -208,7 +207,7 @@ void back_pass(struct network *net)
 
 	sum = 0.0;
 	for (i = net->num_layer-2; i > 0; i--) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
+#pragma omp parallel for num_threads(net->nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i]; k++) {
 				for (l = 0; l < net->layer_size[i+1]; l++) {
@@ -233,7 +232,7 @@ void feedforward(struct network *net)
 	START_TIME(feedforward);
     sum = 0.0;
 	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
+#pragma omp parallel for num_threads(net->nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
                 #pragma omp simd reduction(+:sum)
@@ -260,7 +259,7 @@ void learner(struct network *net)
 
 	START_TIME(backpropagation);
 	// update bias
-#pragma omp parallel for num_threads(nr_thread) private(i, j, k) collapse(2)
+#pragma omp parallel for num_threads(net->nr_thread) private(i, j, k) collapse(2)
 	for (i = 1; i < net->num_layer; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
             #pragma omp simd
@@ -272,7 +271,7 @@ void learner(struct network *net)
 
 	// update weight
 	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) collapse(2)
+#pragma omp parallel for num_threads(net->nr_thread) private(j, k, l) collapse(2)
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
                 #pragma omp simd
@@ -316,7 +315,7 @@ int evaluator(struct network *net)
 		//feedforward
         sum = 0.0;
 		for (j = 0; j < net->num_layer-1; j++) {
-#pragma omp parallel for num_threads(nr_thread) private(k, l) reduction(+:sum)
+#pragma omp parallel for num_threads(net->nr_thread) private(k, l) reduction(+:sum)
 			for (k = 0; k < net->layer_size[j+1]; k++) {
 				for (l = 0; l < net->layer_size[j]; l++) {
 					sum = sum + NEURON(net, j, 0, l) * WEIGHT(net, j, l, k);
