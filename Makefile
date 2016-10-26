@@ -14,7 +14,6 @@ OBJS += main.o network.o jsmn.o
 INCLUDE += $(LIB_PATH)
 
 CFLAGS += -I$(INCLUDE)
-CFLAGS += -g
 CFLAGS += -qopenmp
 CFLAGS += -qopt-report -qopt-report-phase=loop,vec
 
