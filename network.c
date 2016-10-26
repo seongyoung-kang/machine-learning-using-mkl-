@@ -159,7 +159,7 @@ void update(struct network *net)
 
 			// copy input and output for SGD
 			for (k = 0; k < net->mini_batch_size; k++) {
-                int s_index = (k+j*19)%nr_train;
+                int s_index = (int) rand()%nr_train;
 				// copy input to first layer of neuron array
 				for (l = 0; l < first_layer_size; l++)
 					NEURON(net, 0, k, l) = DATA_TRAIN_Q(net, s_index, l);
