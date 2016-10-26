@@ -307,6 +307,7 @@ int evaluator(struct network *net)
 		//feedforward
         sum = 0.0;
 		for (j = 0; j < net->num_layer-1; j++) {
+#pragma omp parallel for num_threads(nr_thread) private(k, l) reduction(+:sum)
 			for (k = 0; k < net->layer_size[j+1]; k++) {
 				for (l = 0; l < net->layer_size[j]; l++) {
 					sum = sum + NEURON(net, j, 0, l) * WEIGHT(net, j, l, k);
