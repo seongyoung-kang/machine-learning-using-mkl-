@@ -185,7 +185,7 @@ static void back_pass(struct network *net)
 
 	START_TIME(back_pass);
 	// calculate delta
-#pragma omp parallel for num_threads(nr_thread) private(i, j)
+#pragma omp parallel for num_threads(nr_thread) private(i, j) collapse(2)
 	for (i = 0; i < net->mini_batch_size; i++) {
 		for (j = 0; j < net->layer_size[net->num_layer-1]; j++) {
 			//	calculate delta in last output layer
@@ -197,7 +197,7 @@ static void back_pass(struct network *net)
 
 	sum = 0.0;
 	for (i = net->num_layer-2; i > 0; i--) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum)
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i]; k++) {
 				for (l = 0; l < net->layer_size[i+1]; l++) {
@@ -222,7 +222,7 @@ static void feedforward(struct network *net)
 	START_TIME(feedforward);
     sum = 0.0;
 	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum)
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
 				for (l = 0; l < net->layer_size[i]; l++) {
