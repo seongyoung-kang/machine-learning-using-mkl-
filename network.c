@@ -149,7 +149,6 @@ void update(struct network *net)
 
 	// initialize the first input layer of neuron
 	for (i = 0; i < net->epoch; i++) {
-//#pragma omp parallel for num_threads(nr_thread) private(j, k, l)
 		for (j = 0; j < nr_loop; j++) {
 
 			// copy input and output for SGD
@@ -243,36 +242,29 @@ void learner(struct network *net)
 {
 	int i, j, k, l;
     timeutils *backpropagation = &net->t_backpropagation;
-	double delta_sum = 0.0;
 	double eta = net->learning_rate;
 	double mini = (double) net->mini_batch_size;
 
 	START_TIME(backpropagation);
 	// update bias
-	delta_sum = 0.0;
-#pragma omp parallel for num_threads(nr_thread) private(i, j, k) reduction(+:delta_sum)
+#pragma omp parallel for num_threads(nr_thread) private(i, j, k) collapse(3)
 	for (i = 1; i < net->num_layer; i++) {
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->mini_batch_size; k++) {
-				delta_sum += ERROR(net, i, k, j);
+                BIAS(net, i, j) -= (eta/mini)*ERROR(net, i, k, j);
 			}
-			BIAS(net, i, j) -= (eta/mini)*delta_sum;
-			delta_sum = 0.0;
 		}
 	}
 
 	// update weight
-	delta_sum = 0.0;
-#pragma omp parallel for num_threads(nr_thread) private(i, j, k, l) reduction(+:delta_sum)
 	for (i = 0; i < net->num_layer-1; i++) {
+#pragma omp parallel for num_threads(nr_thread) private(j, k, l) collapse(3)
 		for (j = 0; j < net->layer_size[i]; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
 				for (l = 0; l < net->mini_batch_size; l++) {
 					//	calculate delta from before layer
-					delta_sum  += (NEURON(net, i, l, j) * ERROR(net, i+1, l, k));
+                    WEIGHT(net, i, j, k) -= (eta/mini)*(NEURON(net, i, l, j) * ERROR(net, i+1, l, k));
 				}
-				WEIGHT(net, i, j, k) -= (eta/mini)*delta_sum;
-				delta_sum = 0.0;
 			}
 		}
 	}
