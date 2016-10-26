@@ -31,11 +31,13 @@
 #define WHILE						while(1)
 
 #ifdef HBWMODE
-#define malloc(x)     hbw_malloc(x)
-#define free(x)       hbw_free(x)
+#define malloc(x)       hbw_malloc(x)
+#define calloc(v, x)    hbw_calloc(v, x)
+#define free(x)         hbw_free(x)
 #else
-#define malloc(x)     malloc(x)
-#define free(x)       free(x)
+#define malloc(x)       malloc(x)
+#define calloc(v, x)    calloc(v, x)
+#define free(x)         free(x)
 #endif
 
 enum DATA_T {BIAS, WEIGHT, ERROR, ZS, NEURON};
