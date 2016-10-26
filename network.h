@@ -69,25 +69,6 @@ struct network {
 
 };
 
-// TODO(casionwoo) : bellow functions would be located in each proper directory and called by function pointer
-
-/* Init network struct from configuration file */
-void initializer(struct network *net, char *conf_fname);
-
-/* Read and fillup the first layer of neurons */
-void reader(struct network *net);
-
-/* Operation like feedforward */
-void update(struct network *net);
-
-/* Operation like backpropagation */
-void learner(struct network *net);
-
-/* evaluator to show how it works well */
-int evaluator(struct network *net);
-
 void run(struct network *net, char *conf_file_path);
-
-void report(struct network *net);
 
 #endif /* __NETWORK_H__ */

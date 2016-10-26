@@ -11,13 +11,19 @@
 #include <omp.h>
 
 double randn(void);
-static void print_error(struct network *net, enum DATA_T t, int layer);
-static double sigmoid(double z);
-static double sigmoid_prime(double z);
-static void print_arr(enum DATA_T t, struct network *net, char *func, int line);
+void print_error(struct network *net, enum DATA_T t, int layer);
+double sigmoid(double z);
+double sigmoid_prime(double z);
+void print_arr(enum DATA_T t, struct network *net, char *func, int line);
 char *read_conf_file(char *conf_name);
-static void feedforward(struct network *net);
-static void back_pass(struct network *net);
+void feedforward(struct network *net);
+void back_pass(struct network *net);
+void initializer(struct network *net, char *conf_fname);
+void reader(struct network *net);
+void update(struct network *net);
+void learner(struct network *net);
+int evaluator(struct network *net);
+void report(struct network *net);
 
 int nr_thread = 100;
 
@@ -176,7 +182,7 @@ void update(struct network *net)
 	}
 }
 
-static void back_pass(struct network *net)
+void back_pass(struct network *net)
 {
 	int i, j, k, l;
 	double sum = 0.0;
@@ -211,7 +217,7 @@ static void back_pass(struct network *net)
 	END_TIME(back_pass);
 }
 
-static void feedforward(struct network *net)
+void feedforward(struct network *net)
 {
 	int i, j, k, l;
 	double sum = 0.0;
@@ -271,12 +277,12 @@ void learner(struct network *net)
 	END_TIME(backpropagation);
 }
 
-static double sigmoid(double z)
+double sigmoid(double z)
 {
 	return (1/(1 + exp(-z)));
 }
 
-static double sigmoid_prime(double z)
+double sigmoid_prime(double z)
 {
 	return sigmoid(z)*(1-sigmoid(z));
 }
@@ -398,7 +404,7 @@ char *read_conf_file(char *conf_name)
 	return buffer;
 }
 
-static void print_arr(enum DATA_T t, struct network *net, char *func, int line)
+void print_arr(enum DATA_T t, struct network *net, char *func, int line)
 {
 	int i, j, k;
 
@@ -458,7 +464,7 @@ static void print_arr(enum DATA_T t, struct network *net, char *func, int line)
 	}
 }
 
-static void print_error(struct network *net, enum DATA_T t, int layer)
+void print_error(struct network *net, enum DATA_T t, int layer)
 {
 	int i, j;
 
