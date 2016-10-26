@@ -230,6 +230,7 @@ void feedforward(struct network *net)
 #pragma omp parallel for num_threads(nr_thread) private(j, k, l) reduction(+:sum) collapse(2)
 		for (j = 0; j < net->mini_batch_size; j++) {
 			for (k = 0; k < net->layer_size[i+1]; k++) {
+                #pragma omp simd reduction(+:sum)
 				for (l = 0; l < net->layer_size[i]; l++) {
 					sum = sum + NEURON(net, i, j, l) * WEIGHT(net, i, l, k);
 				}
