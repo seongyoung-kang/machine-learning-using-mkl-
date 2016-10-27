@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include "network.h"
 
-#define SGD_CONF_STR(x, y)	(x##y)
-
-
 char *CONF_FILES[] = {
 	"./network_configuration/sgd0.conf",
 	"./network_configuration/sgd1.conf",
