@@ -361,7 +361,7 @@ void *parse_value(jsmntok_t *t, char *str, char *target, int nr_t)
 
 	for (i = 1; i < nr_t; i++) {
 		if (jsoneq(str, &t[i], target) == 0) {
-			
+
 			switch (t[i+1].type) {
 				case JSMN_UNDEFINED:
 					i++;
@@ -389,7 +389,7 @@ void *parse_value(jsmntok_t *t, char *str, char *target, int nr_t)
 				case JSMN_PRIMITIVE: {
 					char *ret = (char *)malloc(sizeof(char) * 56);
 					strncpy(ret, str + t[i+1].start, t[i+1].end-t[i+1].start);
-					return (void *) ret;	
+					return (void *) ret;
 				}
 				default:
 					return (void *) NULL;

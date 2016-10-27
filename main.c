@@ -24,6 +24,13 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    //TODO(casionwoo) : Read configuration from JSON
+    //TODO(casionwoo) : Call initialize() parameters : JSON
+    //TODO(casionwoo) : Read Data set
+    //TODO(casionwoo) : Call train() parameters : traing data set
+    //TODO(casionwoo) : Call test()  parameters : test data set
+    //TODO(casionwoo) : Call report() paramters : return value of test()
+
     run(sgd, CONF_FILES[i]);
     free(sgd);
 
