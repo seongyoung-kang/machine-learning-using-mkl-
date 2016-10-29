@@ -82,5 +82,6 @@ struct network {
 };
 
 void run(struct network *net, char *conf_file_path);
+void init(struct network *net, char *conf_str);
 
 #endif /* __NETWORK_H__ */

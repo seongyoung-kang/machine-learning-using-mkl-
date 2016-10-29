@@ -16,7 +16,6 @@ double sigmoid_prime(double z);
 char *read_conf_file(char *conf_name);
 void feedforward(struct network *net);
 void back_pass(struct network *net);
-void initializer(struct network *net, char *conf_fname);
 void reader(struct network *net);
 void update(struct network *net);
 void learner(struct network *net);
@@ -25,10 +24,6 @@ void report(struct network *net);
 
 void run(struct network *net, char *conf_file_path)
 {
-
-	// Initialze from configuration file
-	initializer(net, conf_file_path);
-
 	// read and fill up network input later
 	reader(net);
 
@@ -40,12 +35,11 @@ void run(struct network *net, char *conf_file_path)
 }
 
 /* Init network struct from configuration file */
-void initializer(struct network *net, char *conf_fname)
+void init(struct network *net, char *conf_str)
 {
 	int i,j,k;
 	int before_ac_weights = 0;
 	int before_ac_neurals = 0;
-	char *conf_str = read_conf_file(conf_fname);
     timeutils *feedforward = &net->t_feedforward;
     timeutils *back_pass = &net->t_back_pass;
     timeutils *backpropagation = &net->t_backpropagation;
@@ -382,39 +376,6 @@ void report(struct network *net)
 
 	fprintf( f, "total : %ld.%d sec\n", TOTAL_SEC_TIME(total), TOTAL_SEC_UTIME(total));
 	fclose(f);
-}
-
-char *read_conf_file(char *conf_name)
-{
-	FILE *fp;
-	long lSize;
-	char *buffer;
-
-	if ((fp = fopen ( conf_name , "rb" )) == NULL) {
-		printf("%s fopen failed\n", conf_name);
-		exit(1);
-	}
-
-	fseek( fp , 0L , SEEK_END);
-	lSize = ftell( fp );
-	rewind( fp );
-
-	/* allocate memory for entire content */
-	if ((buffer = (char *) calloc(1, lSize+1)) == NULL) {
-		fclose(fp);
-		printf("buffer memory alloc fails\n");
-		exit(1);
-	}
-
-	/* copy the file into the buffer */
-	if( 1!=fread( buffer , lSize, 1 , fp) ) {
-		fclose(fp);
-		free(buffer);
-		printf("%s entire read fails\n", conf_name);
-		exit(1);
-	}
-
-	return buffer;
 }
 
 double randn(void)
