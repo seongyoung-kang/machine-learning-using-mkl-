@@ -11,10 +11,8 @@
 #include <omp.h>
 
 double randn(void);
-void print_error(struct network *net, enum DATA_T t, int layer);
 double sigmoid(double z);
 double sigmoid_prime(double z);
-void print_arr(enum DATA_T t, struct network *net, char *func, int line);
 char *read_conf_file(char *conf_name);
 void feedforward(struct network *net);
 void back_pass(struct network *net);
@@ -417,112 +415,6 @@ char *read_conf_file(char *conf_name)
 	}
 
 	return buffer;
-}
-
-void print_arr(enum DATA_T t, struct network *net, char *func, int line)
-{
-	int i, j, k;
-
-	if (t == BIAS) {
-		printf("BIAS %s[%d]\n", func, line);
-		for (i = 1; i < net->num_layer; i++) {
-			for (j = 0; j < net->layer_size[i]; j++) {
-
-				printf("%3.2f ",BIAS(net, i, j));
-			}
-			printf("\n");
-		}
-	} else if(t == WEIGHT) {
-		printf("WEIGHT %s[%d]\n", func, line);
-		for (i = 0; i < net->num_layer; i++) {
-			for (j = 0; j < net->layer_size[i]; j++) {
-				for (k = 0; k < net->layer_size[i+1]; k++) {
-
-					printf("%3.2f ",WEIGHT(net, i, j, k));
-				}
-			}
-			printf("\n");
-		}printf("\n");
-	} else if(t == ERROR) {
-		printf("ERROR %s[%d]\n", func, line);
-		for (i = 0; i < net->num_layer; i++) {
-			for (j = 0; j < net->mini_batch_size; j++) {
-				for (k = 0; k < net->layer_size[i]; k++) {
-
-					printf("%3.2f ",ERROR(net, i, j, k));
-				}
-			}
-			printf("\n");
-		}printf("\n");
-	} else if(t == ZS) {
-		printf("ZS %s[%d]\n", func, line);
-		for (i = 0; i < net->num_layer; i++) {
-			for (j = 0; j < net->mini_batch_size; j++) {
-				for (k = 0; k < net->layer_size[i]; k++) {
-
-					printf("%3.2f ",ZS(net, i, j, k));
-				}
-			}
-			printf("\n");
-		}printf("\n");
-	} else if(t == NEURON) {
-		printf("NEURON %s[%d]\n", func, line);
-		for (i = 0; i < net->num_layer; i++) {
-			for (j = 0; j < net->mini_batch_size; j++) {
-				for (k = 0; k < net->layer_size[i]; k++) {
-
-					printf("%3.2f ",NEURON(net, i, j, k));
-				}
-			}
-			printf("\n");
-		}printf("\n");
-	}
-}
-
-void print_error(struct network *net, enum DATA_T t, int layer)
-{
-	int i, j;
-
-	if (t == ERROR) {
-		printf("ERROR\n");
-		for (i = 0 ; i < net->mini_batch_size; i++) {
-			for (j = 0; j < net->layer_size[layer]; j++) {
-				printf("%1.2f ", ERROR(net, layer, i , j));
-			}
-			printf("\n");
-		}
-	} else if(t == NEURON){
-		printf("NEURON\n");
-		for (i = 0 ; i < net->mini_batch_size; i++) {
-			for (j = 0; j < net->layer_size[layer]; j++) {
-				printf("%1.2f ", NEURON(net, layer, i , j));
-			}
-			printf("\n");
-		}
-	} else if(t == ZS){
-		printf("ZS\n");
-		for (i = 0 ; i < net->mini_batch_size; i++) {
-			for (j = 0; j < net->layer_size[layer]; j++) {
-				printf("%1.2f ", ZS(net, layer, i , j));
-			}
-			printf("\n");
-		}
-	} else if(t == WEIGHT){
-		printf("WEIGHT\n");
-		for (i = 0 ; i < net->layer_size[layer]; i++) {
-			for (j = 0; j < net->layer_size[layer+1]; j++) {
-				printf("%1.2f ", WEIGHT(net, layer, i , j));
-			}
-			printf("\n");
-		}
-	} else if(t == BIAS){
-		printf("BIAS\n");
-        for (i = 0 ; i < net->layer_size[layer]; i++) {
-            printf("%1.2f ", BIAS(net, layer, i));
-        }
-        printf("\n");
-	}
-
 }
 
 double randn(void)
