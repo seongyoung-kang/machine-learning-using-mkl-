@@ -1,9 +1,9 @@
-for ((times=0;times<3;times++)); do
-    for ((i=80;i<=200;i+=10)); do
-        for ((j=80;j<=200;j+=10)); do
-            for ((k=80;k<=200;k+=10)); do
-                for ((l=80;l<=200;l+=10)); do
-                    for ((m=80;m<=200;m+=10)); do
+for ((times=0;times<1;times++)); do
+    for ((i=80;i<=160;i+=10)); do
+        for ((j=80;j<=160;j+=10)); do
+            for ((k=80;k<=160;k+=10)); do
+                for ((l=80;l<=160;l+=10)); do
+                    for ((m=80;m<=160;m+=10)); do
                         ./mnist $i $j $k $l $m
                     done
                 done

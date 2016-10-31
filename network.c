@@ -334,7 +334,7 @@ void report(struct network *net, void *threads)
 	int i = 0;
 	FILE *f = fopen(net->report_file, "a+");
 	FILE *f_json = fopen("./result/dump_json", "a+");
-	if (f == NULL || f_json) {
+	if (f == NULL || f_json == NULL) {
 		printf("%s open failed\n", net->report_file);
 		printf("%s open failed\n", "dump_json");
 		exit(1);
@@ -365,7 +365,6 @@ void report(struct network *net, void *threads)
     TIMER_ADD(feedforward, total);
     TIMER_ADD(back_pass, total);
     TIMER_ADD(backpropagation, total);
-
 	fprintf( f, "total : %ld.%d sec\n", TOTAL_SEC_TIME(total), TOTAL_SEC_UTIME(total));
 
     fprintf( f_json, "{\n");
@@ -374,11 +373,10 @@ void report(struct network *net, void *threads)
     fprintf( f_json, "\"back_pass_thread2\":%d,\n",thread[2]);
     fprintf( f_json, "\"backpropagation_thread1\":%d,\n",thread[3]);
     fprintf( f_json, "\"backpropagation_thread2\":%d,\n",thread[4]);
-	fprintf( f_json, "\"feedforward_time\" : %ld.%d,\n", TOTAL_SEC_TIME(feedforward), TOTAL_SEC_UTIME(feedforward));
-	fprintf( f_json, "\"back_pass_time\" : %ld.%d,\n", TOTAL_SEC_TIME(back_pass), TOTAL_SEC_UTIME(back_pass));
-	fprintf( f_json, "\"backpropagation\" : %ld.%d,\n", TOTAL_SEC_TIME(backpropagation), TOTAL_SEC_UTIME(backpropagation));
-	fprintf( f_json, "\"total_time\" : %ld.%d,\n", TOTAL_SEC_TIME(total), TOTAL_SEC_UTIME(total));
-
+	fprintf( f_json, "\"feedforward_time\": %ld.%d,\n", TOTAL_SEC_TIME(feedforward), TOTAL_SEC_UTIME(feedforward));
+	fprintf( f_json, "\"back_pass_time\": %ld.%d,\n", TOTAL_SEC_TIME(back_pass), TOTAL_SEC_UTIME(back_pass));
+	fprintf( f_json, "\"backpropagation\": %ld.%d,\n", TOTAL_SEC_TIME(backpropagation), TOTAL_SEC_UTIME(backpropagation));
+	fprintf( f_json, "\"total_time\": %ld.%d\n", TOTAL_SEC_TIME(total), TOTAL_SEC_UTIME(total));
     fprintf( f_json, "},");
 
 	fclose(f);
