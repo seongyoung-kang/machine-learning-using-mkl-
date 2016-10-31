@@ -2,41 +2,40 @@
 #include <stdlib.h>
 #include "network.h"
 
-char *read_conf_file(char *conf_name);
+#define CONF_FILE   "./network_configuration/sgd0.conf"
 
-char *CONF_FILES[] = {
-	"./network_configuration/sgd0.conf",
-	"./network_configuration/sgd1.conf",
-	"./network_configuration/sgd2.conf",
-	"./network_configuration/sgd3.conf",
-	"./network_configuration/sgd4.conf",
-	"./network_configuration/sgd5.conf",
-	"./network_configuration/sgd6.conf",
-	"./network_configuration/sgd7.conf",
-	"./network_configuration/sgd8.conf",
-	"./network_configuration/sgd9.conf",
-};
+char *read_conf_file(char *conf_name);
+void params_checker(int argc);
+
 int main(int argc, char **argv)
 {
-	int i = 0;
+    int i;
+	int recog = 0;
 	char *conf_str;
 	struct network *net;
+    int *threads;
 
-    if ((net = (struct network *) malloc(sizeof(struct network))) == NULL) {
-        printf("sgd struct generate failed\n");
-        exit(1);
-    }
+    params_checker(argc);
 
-    //TODO(casionwoo) : Read configuration from JSON
-    conf_str = read_conf_file(CONF_FILES[0]);
-	// Initialze from configuration file
+    threads = (int *) malloc(sizeof(int) * argc-1);
+
+    for (i = 1; i < argc; i++)
+        threads[i-1] = atoi(argv[i]);
+
+    conf_str = read_conf_file(CONF_FILE);
+
+    net = (struct network *) malloc(sizeof(struct network));
+
     init(net, conf_str);
-    //TODO(casionwoo) : Read Data set
-    //TODO(casionwoo) : Call train() parameters : traing data set
-    //TODO(casionwoo) : Call test()  parameters : test data set
-    //TODO(casionwoo) : Call report() paramters : return value of test()
 
-    run(net, CONF_FILES[i]);
+    reader(net);
+
+    train(net, (void *) threads);
+
+//    predict(net);
+
+    report(net, (void *) threads);
+
     free(net);
 
     return 0;
@@ -73,4 +72,12 @@ char *read_conf_file(char *conf_name)
 	}
 
 	return buffer;
+}
+
+void params_checker(int argc)
+{
+    if (argc < 6) {
+        printf("please check your parameters\n");
+        exit(1);
+    }
 }

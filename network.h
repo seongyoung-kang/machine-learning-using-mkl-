@@ -81,7 +81,10 @@ struct network {
 
 };
 
-void run(struct network *net, char *conf_file_path);
 void init(struct network *net, char *conf_str);
+void reader(struct network *net);
+void train(struct network *net, void *threads);
+int predict(struct network *net);
+void report(struct network *net, void *threads);
 
 #endif /* __NETWORK_H__ */
