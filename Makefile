@@ -16,6 +16,7 @@ INCLUDE += $(LIB_PATH)
 CFLAGS += -I$(INCLUDE)
 CFLAGS += -qopenmp
 #CFLAGS += -g
+#CFLAGS += -XMIC_AVC512
 CFLAGS += -qopt-report -qopt-report-phase=loop,vec
 CFLAGS += -lmemkind
 CFLAGS += -L/home/memkind_build/lib
