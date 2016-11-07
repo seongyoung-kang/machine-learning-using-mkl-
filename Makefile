@@ -19,6 +19,7 @@ CFLAGS += -qopenmp
 #CFLAGS += -XMIC_AVC512
 CFLAGS += -qopt-report -qopt-report-phase=loop,vec
 CFLAGS += -lmemkind
+CFLAGS += -parallel-source-info=2
 CFLAGS += -L/home/memkind_build/lib
 CFLAGS += -I/home/memkind_build/include/
 
