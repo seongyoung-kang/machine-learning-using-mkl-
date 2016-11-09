@@ -10,6 +10,8 @@
 
 #include <omp.h>
 
+#define MAX_CPU         256
+
 static void feedforward(struct network *net, int thread);
 static void back_pass(struct network *net, int thread1, int thread2);
 static void backpropagation(struct network *net, int thread1, int thread2);
@@ -166,28 +168,56 @@ void train(struct network *net, void *threads)
 
 void feedforward(struct network *net, int thread)
 {
-	int i, j, k, l;
+	int i, j, k, l, m;
 	double sum = 0.0;
     timeutils *feedforward = &net->t_feedforward;
 
 	// feedforward
 	START_TIME(feedforward);
     sum = 0.0;
-	for (i = 0; i < net->num_layer-1; i++) {
-#pragma omp parallel for num_threads(thread) private(j, k, l) reduction(+:sum) collapse(2)
-		for (j = 0; j < net->mini_batch_size; j++) {
-			for (k = 0; k < net->layer_size[i+1]; k++) {
-                #pragma omp simd reduction(+:sum)
-				for (l = 0; l < net->layer_size[i]; l++) {
-					sum = sum + NEURON(net, i, j, l) * WEIGHT(net, i, l, k);
-				}
+    int nr_chunk = thread;
+    int chunk_size = (int) (net->mini_batch_size/nr_chunk);
 
-				ZS(net, i+1, j, k) = sum + BIAS(net, i+1, k);
-				NEURON(net, i+1, j, k) = sigmoid(ZS(net, i+1, j, k));
-				sum = 0.0;
-			}
-		}
-	}
+#if 1   /*without collapse*/
+
+//    omp_set_nested(1); // without this line is fater than with.
+    for (i = 0; i < net->num_layer-1; i++) {
+        for (j = 0; j < nr_chunk; j++) {
+            #pragma omp parallel for num_threads(chunk_size) private(m, k, l)
+            for (m = 0; m < chunk_size; m++) {
+                #pragma omp parallel for num_threads(MAX_CPU/chunk_size) private(k, l)
+                for (k = 0; k < net->layer_size[i+1]; k++) {
+                    #pragma omp simd reduction(+:sum)
+                    for (l = 0; l < net->layer_size[i]; l++) {
+                        sum = sum + NEURON(net, i, j*chunk_size+m, l) * WEIGHT(net, i, l, k);
+                    }
+
+                    ZS(net, i+1, j*chunk_size+m, k) = sum + BIAS(net, i+1, k);
+                    NEURON(net, i+1, j*chunk_size+m, k) = sigmoid(ZS(net, i+1, j*chunk_size+m, k));
+                    sum = 0.0;
+                }
+            }
+        }
+    }
+#else   /*with collapse*/
+    for (i = 0; i < net->num_layer-1; i++) {
+        for (j = 0; j < nr_chunk; j++) {
+            #pragma omp parallel for num_threads(100) private(m, k, l) collapse(2)
+            for (m = 0; m < chunk_size; m++) {
+                for (k = 0; k < net->layer_size[i+1]; k++) {
+                    #pragma omp simd reduction(+:sum)
+                    for (l = 0; l < net->layer_size[i]; l++) {
+                        sum = sum + NEURON(net, i, j*chunk_size+m, l) * WEIGHT(net, i, l, k);
+                    }
+
+                    ZS(net, i+1, j*chunk_size+m, k) = sum + BIAS(net, i+1, k);
+                    NEURON(net, i+1, j*chunk_size+m, k) = sigmoid(ZS(net, i+1, j*chunk_size+m, k));
+                    sum = 0.0;
+                }
+            }
+        }
+    }
+#endif
 	END_TIME(feedforward);
 }
 
@@ -348,9 +378,9 @@ void report(struct network *net, void *threads)
 //		fprintf( f, "%d ", net->layer_size[i]);
 //	}
 //	fprintf( f, "]\n");
-//	fprintf( f, "epoch : %d\n", net->epoch);
-//	fprintf( f, "learning_rate : %f\n", net->learning_rate);
-//	fprintf( f, "recognization rate : %d/%d\n", net->best_recog, net->nr_test_data);
+	fprintf( f, "epoch : %d\n", net->epoch);
+	fprintf( f, "learning_rate : %f\n", net->learning_rate);
+	fprintf( f, "recognization rate : %d/%d\n", net->best_recog, net->nr_test_data);
 	fprintf( f, "=======================THREADS======================\n");
 	fprintf( f, "feedforward thread : %d\n", thread[0]);
 	fprintf( f, "back_pass thread1 : %d\n", thread[1]);

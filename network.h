@@ -17,11 +17,11 @@
 
 // ith layer, jth mini_batch, kth node
 #define NEURON(net_p, i, j, k)      (net_p->neuron[AC_NEURONS(net_p, i-1)*net_p->mini_batch_size \
-									+ net_p->layer_size[i]*j + k])
+									+ net_p->layer_size[i]*(j) + (k)])
 #define ZS(net_p, i, j, k)      	(net_p->zs[AC_NEURONS(net_p, i-1)*net_p->mini_batch_size \
-									+ net_p->layer_size[i]*j + k])
+									+ net_p->layer_size[i]*(j) + (k)])
 #define ERROR(net_p, i, j, k)      	(net_p->error[AC_NEURONS(net_p, i-1)*net_p->mini_batch_size \
-									+ net_p->layer_size[i]*j + k])
+									+ net_p->layer_size[i]*(j) + (k)])
 
 #define DATA_TRAIN_Q(net, i, j)		(net->train_q[net->layer_size[0]*i + j])
 #define DATA_TRAIN_A(net, i)		(net->train_a[i])

@@ -1,4 +1,5 @@
 CC=icc
+#CC=kinst-ompp icc
 ELF=mnist
 
 ROOT_PATH= .
@@ -16,10 +17,10 @@ INCLUDE += $(LIB_PATH)
 CFLAGS += -I$(INCLUDE)
 CFLAGS += -qopenmp
 #CFLAGS += -g
-#CFLAGS += -XMIC_AVC512
-CFLAGS += -qopt-report -qopt-report-phase=loop,vec
+#CFLAGS += -xMIC-AVX512
+CFLAGS += -qopt-report-phase=all
 CFLAGS += -lmemkind
-CFLAGS += -parallel-source-info=2
+#CFLAGS += -parallel-source-info=2
 CFLAGS += -L/home/memkind_build/lib
 CFLAGS += -I/home/memkind_build/include/
 
