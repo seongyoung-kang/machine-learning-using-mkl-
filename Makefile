@@ -16,6 +16,7 @@ INCLUDE += $(LIB_PATH)
 
 CFLAGS += -I$(INCLUDE)
 CFLAGS += -qopenmp
+CFLAGS += -mkl
 #CFLAGS += -g
 #CFLAGS += -xMIC-AVX512
 CFLAGS += -qopt-report-phase=all

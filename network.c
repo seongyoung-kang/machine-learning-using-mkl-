@@ -7,6 +7,7 @@
 #include "mnist/mnist.h"
 #include "timeutils.h"
 #include <math.h>
+#include "mkl.h"
 
 #include <omp.h>
 
@@ -178,15 +179,17 @@ void feedforward(struct network *net, int thread)
     int nr_chunk = thread;
     int chunk_size = (int) (net->mini_batch_size/nr_chunk);
 
-#if 1   /*without collapse*/
+#if 0   /* OpenMP : without collapse */
 
 //    omp_set_nested(1); // without this line is fater than with.
     for (i = 0; i < net->num_layer-1; i++) {
         for (j = 0; j < nr_chunk; j++) {
             #pragma omp parallel for num_threads(chunk_size) private(m, k, l)
             for (m = 0; m < chunk_size; m++) {
+//                printf("m(%d) : %d/%d th thread\n", m,omp_get_thread_num(),omp_get_num_threads());
                 #pragma omp parallel for num_threads(MAX_CPU/chunk_size) private(k, l)
                 for (k = 0; k < net->layer_size[i+1]; k++) {
+//                    printf("m(%d), k(%d) : %d/%d th thread\n", m, k, omp_get_thread_num(),omp_get_num_threads());
                     #pragma omp simd reduction(+:sum)
                     for (l = 0; l < net->layer_size[i]; l++) {
                         sum = sum + NEURON(net, i, j*chunk_size+m, l) * WEIGHT(net, i, l, k);
@@ -199,7 +202,7 @@ void feedforward(struct network *net, int thread)
             }
         }
     }
-#else   /*with collapse*/
+#elif 0   /* OpenMP : with collapse */
     for (i = 0; i < net->num_layer-1; i++) {
         for (j = 0; j < nr_chunk; j++) {
             #pragma omp parallel for num_threads(100) private(m, k, l) collapse(2)
@@ -216,6 +219,29 @@ void feedforward(struct network *net, int thread)
                 }
             }
         }
+    }
+#else   /* MKL */
+    double *tmp, *tmp_bias;
+
+    for (i = 0; i < net->num_layer-1; i++) {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    net->mini_batch_size, net->layer_size[i+1], net->layer_size[i], 1.0, (const double *)&NEURON(net, i, 0, 0),
+                    net->layer_size[i], (const double *)&WEIGHT(net, i, 0, 0), net->layer_size[i+1], 0.0,
+                    &NEURON(net, i+1, 0, 0), net->layer_size[i+1]);
+
+        tmp      = malloc(sizeof(double) * net->mini_batch_size);
+        tmp_bias = malloc(sizeof(double) * net->layer_size[i+1] * net->mini_batch_size);
+        for (j = 0; j < net->mini_batch_size; j++)
+            tmp[j] = 1.0;
+
+        cblas_dger(CblasRowMajor, net->mini_batch_size, net->layer_size[i+1],
+                        1.0, (const double *)tmp, 1, (const double *)&BIAS(net, i, 0),
+                        1, tmp_bias, net->layer_size[i+1]);
+
+        vdAdd(net->layer_size[i+1] * net->mini_batch_size, tmp_bias, &NEURON(net, i+1, 0, 0), &ZS(net, i+1, 0, 0));
+        for (j = 0; j < net->mini_batch_size; j++)
+            for (k = 0; k < net->layer_size[i+1]; k++)
+                NEURON(net, i+1, j, k) = sigmoid(ZS(net, i+1, j, k));
     }
 #endif
 	END_TIME(feedforward);
