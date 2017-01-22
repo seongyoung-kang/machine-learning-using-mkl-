@@ -28,16 +28,18 @@ void init(struct network *net, char *conf_str)
 	int before_ac_weights = 0;
 	int before_ac_neurals = 0;
 
-    timeutils *feedforward = &net->t_feedforward;
+    timeutils *feedforward = &net->t_feedforward; //timeutils 는 net 에 있는 t_feedforward 의 주소값을 가진다.
     timeutils *back_pass = &net->t_back_pass;
     timeutils *backpropagation = &net->t_backpropagation;
 
 	net->best_recog = 0.0;
-    TIMER_INIT(feedforward);
+    TIMER_INIT(feedforward); //시간 초기화
     TIMER_INIT(back_pass);
     TIMER_INIT(backpropagation);
 
-	net->tokens = json_parsing(conf_str, &net->nr_tokens);
+    /*json 을 이용해서 값을 불러와서 net에 값을 넣어준다 */
+	
+    net->tokens = json_parsing(conf_str, &net->nr_tokens);
 	net->num_layer = atoi((char *) parse_value(net->tokens, conf_str, "num_layer", net->nr_tokens));
 	net->layer_size = (int *) parse_value(net->tokens, conf_str, "layer_size", net->nr_tokens);
 	net->learning_rate = strtod((char *) parse_value(net->tokens, conf_str, "learning_rate", net->nr_tokens), NULL);
@@ -47,7 +49,7 @@ void init(struct network *net, char *conf_str)
 	net->ac_weight = (int *) malloc(sizeof(double) * net->num_layer);
 	net->ac_neuron = (int *) malloc(sizeof(double) * net->num_layer);
 
-	net->train_q_name = (char *) parse_value(net->tokens, conf_str, "train_q", net->nr_tokens);
+	net->train_q_name = (char *) parse_value(net->tokens, conf_str, "train_q", net->nr_tokens); //network.h 헤더파일에 있는 부분
 	net->train_a_name = (char *) parse_value(net->tokens, conf_str, "train_a", net->nr_tokens);
 	net->test_q_name = (char *) parse_value(net->tokens, conf_str, "test_q", net->nr_tokens);
 	net->test_a_name = (char *) parse_value(net->tokens, conf_str, "test_a", net->nr_tokens);
@@ -55,17 +57,17 @@ void init(struct network *net, char *conf_str)
 
 
 	for (i = 0; i < net->num_layer; i++) {
-		net->ac_neuron[i] = net->layer_size[i] + before_ac_neurals;
+		net->ac_neuron[i] = net->layer_size[i] + before_ac_neurals;//ac_neuron은 여태 누적한 neuron갯수..
 		before_ac_neurals = net->ac_neuron[i];
 
 		if (i == net->num_layer-1)
 			continue;
 
-		net->ac_weight[i] = net->layer_size[i] * net->layer_size[i+1] + before_ac_weights;
-		before_ac_weights = net->ac_weight[i];
+		net->ac_weight[i] = net->layer_size[i] * net->layer_size[i+1] + before_ac_weights; //ac_weight는 여태 누적한 weight 의 갯수..
+		before_ac_weights = net->ac_weight[i]; 
 	}
 
-	net->neuron = (double *) malloc(sizeof(double) * net->mini_batch_size * TOTAL_NEURONS(net));
+	net->neuron = (double *) malloc(sizeof(double) * net->mini_batch_size * TOTAL_NEURONS(net)); //neuron 배열의 크기는 minibatch_size * 총 뉴련의 숫자
 	net->zs = (double *) malloc(sizeof(double) * net->mini_batch_size * TOTAL_NEURONS(net));
 	net->error =  (double *) malloc(sizeof(double) * net->mini_batch_size * TOTAL_NEURONS(net));
 	net->bias = (double *) malloc(sizeof(double) * TOTAL_NEURONS(net));
@@ -101,9 +103,9 @@ void reader(struct network *net)
 	// copy train imgae&label
 	for (i = 0; i < net->nr_train_data; i++) {
 		for (j = 0; j < first_layer_size; j++) {
-			DATA_TRAIN_Q(net, i, j) = train_data[i].data[j/28][j%28];
-		}
-        DATA_TRAIN_A(net, i) = train_data[i].label;
+			DATA_TRAIN_Q(net, i, j) = train_data[i].data[j/28][j%28];       //train_q[] =  train_data[data number].data[28][28 ] train_q배열은 28*28*데이터 수 만큼의 크기임
+         }
+        DATA_TRAIN_A(net, i) = train_data[i].label;                         //train_a[] =  답안 배열 크기는 데이터 수 만큼의 크기 입니다.
 	}
 
 	// Reading test data
@@ -131,30 +133,30 @@ void train(struct network *net, void *threads)
 {
 	int i, j, k, l;
 	int nr_train = net->nr_train_data;
-	int nr_loop = (int)(net->nr_train_data/net->mini_batch_size);
-	int first_layer_size = AC_NEURONS(net, 0);
-	int last_layer_size = net->layer_size[net->num_layer-1];
+	int nr_loop = (int)(net->nr_train_data/net->mini_batch_size);   //전체데이터를 미니배치 사이즈 만큼 나눈 수 입니다.(업데이트 할 숫자)
+	int first_layer_size = AC_NEURONS(net, 0);                      //말 그대로 첫번째 layer size
+	int last_layer_size = net->layer_size[net->num_layer-1];        //두번째 layer size
 	int recog = 0;
     int *thread = (int *) threads;
 
 
 	// initialize the first input layer of neuron
 	for (i = 0; i < net->epoch; i++) {
-		for (j = 0; j < nr_loop; j++) {
+		for (j = 0; j < nr_loop; j++) {                                 //j는 업데이트 하는 번수 (전체데이터를  mini batch로 나눈 값)
 
 			// copy input and output for SGD
-			for (k = 0; k < net->mini_batch_size; k++) {
+			for (k = 0; k < net->mini_batch_size; k++) {                   //k는데이터 번호를 뜻합니다, mini batch 사이즈 전까지 증가합니다
                 int s_index = (int) rand()%nr_train;
 				// copy input to first layer of neuron array
-				for (l = 0; l < first_layer_size; l++)
-					NEURON(net, 0, k, l) = DATA_TRAIN_Q(net, s_index, l);
-
-                for (l = 0; l < last_layer_size; l++)
+				for (l = 0; l < first_layer_size; l++)                    //l은 28*28 까지 증가합니다
+					NEURON(net, 0, k, l) = DATA_TRAIN_Q(net, s_index, l); //s_index 번째 데이터를 가져옵니다 그것을 net->neuron[net->layer_size[0]*(k) + (l)] 에 넣습니다.
+                                                                        //즉 neuron 배열에 차곡차곡 랜덤한 인풋값을 넣습니다.
+               for (l = 0; l < last_layer_size; l++)
                     ERROR(net, net->num_layer-1, k, l) = 0.0;
 				// copy output to error array
-				ERROR(net, net->num_layer-1, k, DATA_TRAIN_A(net, s_index)) = 1.0;
+				ERROR(net, net->num_layer-1, k, DATA_TRAIN_A(net, s_index)) = 1.0; //error 배열에 0또는 1의값 넣습니다.
 			}
-            // feedforward + back_pass
+            // feedforward + back_pass      mini_batch size 만큼 다하고 함수들 실행
             feedforward(net, thread[0]);
             back_pass(net, thread[1], thread[2]);
             backpropagation(net, thread[3], thread[4]);
@@ -177,12 +179,12 @@ void feedforward(struct network *net, int thread)
 	START_TIME(feedforward);
     sum = 0.0;
     int nr_chunk = thread;
-    int chunk_size = (int) (net->mini_batch_size/nr_chunk);
+    int chunk_size = (int) (net->mini_batch_size/nr_chunk); //mini_batch size를 쓰래드 갯수만큼  나눈것
 
 #if 0   /* OpenMP : without collapse */
 
 //    omp_set_nested(1); // without this line is fater than with.
-    for (i = 0; i < net->num_layer-1; i++) {
+    for (i = 0; i < net->num_layer-1; i++) { //layer 갯수에서 하나뺀 즉, 실질적으로 한번씩 값의 전파가 일어나는 횟수
         for (j = 0; j < nr_chunk; j++) {
             #pragma omp parallel for num_threads(chunk_size) private(m, k, l)
             for (m = 0; m < chunk_size; m++) {
