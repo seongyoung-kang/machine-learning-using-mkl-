@@ -23,9 +23,9 @@ int main(int argc, char **argv)
         threads[i-1] = atoi(argv[i]); //threads 배열은 쓰래드의 숫자를 각각 저장합니다.
 
     conf_str = read_conf_file(CONF_FILE); //conf_str에 json파일내용을 집어 넣습니다.
-    
+
     net = (struct network *) malloc(sizeof(struct network)); //network 데이터를 할당합니다
-    
+
     init(net, conf_str); //네트워크구조체와 , json 형태의 배열을 보내줍니다. 네트워크 구조체 멤버들의 메모리크기 할당& 초기화
 
     reader(net); //train , test 에 input값을 넣어주는 역할을 합니다.
