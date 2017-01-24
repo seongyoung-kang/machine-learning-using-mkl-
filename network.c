@@ -19,7 +19,6 @@ static void backpropagation(struct network *net, int thread1, int thread2);
 
 static double randn(void);
 static double sigmoid(double z);
-                            a/#define NEURON(net_p, i, j, k)   (net_p->neuron[AC_NEURONS(net_p, i-1)*net_p->mini_batch_size \+ net_p->layer_size[i]*(j) + (k)])
 static double sigmoid_prime(double z);
 
 /* Init network struct from configuration file */
@@ -264,7 +263,7 @@ void back_pass(struct network *net, int thread1, int thread2)
     timeutils *back_pass = &net->t_back_pass;
 
 	START_TIME(back_pass);
-#if 0
+#if 1
 
 // calculate delta
 #pragma omp parallel for num_threads(thread1) private(i, j) collapse(2)
@@ -311,7 +310,7 @@ void back_pass(struct network *net, int thread1, int thread2)
 	    	}
 
     //temp1 * temp2 (when this loop is end  first delta is done!!)
-    vdMul(net->layer_size[net->num_layer-1]*net->mini_batch_size,temp1,temp2,&ERROR(net, net->num_layer-1, 0, 0))
+    vdMul(net->layer_size[net->num_layer-1]*net->mini_batch_size,temp1,temp2,&ERROR(net, net->num_layer-1, 0, 0));
 
     //caculrate delta to using backpropagation algorithm
     for (i = net->num_layer-2; i > 0; i--)
@@ -322,7 +321,7 @@ void back_pass(struct network *net, int thread1, int thread2)
             temp_error = (double*)malloc(sizeof(double)*net->layer_size[i]);
 
             //calculate temp_error
-            cblas_dgemv (CblasRowMajor, CblasNoTrans,  net->layer_size[i], net->layer_size[i+1], 1.0,(const double *)&WEIGHT(net, i, 0, 0), net->layer_size[i+1],(const double *)&ERROR(net,i+1, j, 0,) ,1 ,0.0 , temp_error , 1);
+            cblas_dgemv (CblasRowMajor, CblasNoTrans,  net->layer_size[i], net->layer_size[i+1], 1.0,(const double *)&WEIGHT(net, i, 0, 0), net->layer_size[i+1],(const double *)&ERROR(net,i+1, j, 0),1 ,0.0 , temp_error , 1);
 
             //calculate delta = past error * weight * sigmoidprime(zs)
             #pragma omp parallel for num_threads(thread1)
