@@ -263,7 +263,7 @@ void back_pass(struct network *net, int thread1, int thread2)
     timeutils *back_pass = &net->t_back_pass;
 
 	START_TIME(back_pass);
-#if 1
+#if 0
 
 // calculate delta
 #pragma omp parallel for num_threads(thread1) private(i, j) collapse(2)
@@ -356,6 +356,7 @@ void backpropagation(struct network *net, int thread1, int thread2)
 		}
 	}
 
+/*
 	// update weight
 	for (i = 0; i < net->num_layer-1; i++) {
 #pragma omp parallel for num_threads(thread2) private(j, k, l) collapse(2)
@@ -368,6 +369,13 @@ void backpropagation(struct network *net, int thread1, int thread2)
 				}
 			}
 		}
+	}
+ */
+	// update weight
+	
+	for (i = 0; i < net->num_layer-1; i++)
+	{
+		cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,net->layer_size[i], net->layer_size[i+1],net->mini_batch_size, -(eta/mini), (const double *)&NEURON(net, i, 0, 0),net->layer_size[i], (const double *)&ERROR(net, i+1, 0, 0), net->layer_size[i+1], 1.0,&WEIGHT(net, i, 0, 0), net->layer_size[i+1]);
 	}
 	END_TIME(backpropagation);
 }
