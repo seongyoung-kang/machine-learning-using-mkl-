@@ -38,7 +38,7 @@ void init(struct network *net, char *conf_str)
     TIMER_INIT(backpropagation);
 
     /*json 을 이용해서 값을 불러와서 net에 값을 넣어준다 */
-	
+
     net->tokens = json_parsing(conf_str, &net->nr_tokens);
 	net->num_layer = atoi((char *) parse_value(net->tokens, conf_str, "num_layer", net->nr_tokens));
 	net->layer_size = (int *) parse_value(net->tokens, conf_str, "layer_size", net->nr_tokens);
