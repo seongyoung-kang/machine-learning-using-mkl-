@@ -13,16 +13,23 @@
 
 #define MAX_CPU         256
 
-static void feedforward(struct network *net, int thread);
-static void back_pass(struct network *net, int thread1, int thread2);
-static void backpropagation(struct network *net, int thread1, int thread2);
+static void feedforward(struct network *net, int thread,int mode);
+static void back_pass(struct network *net, int thread1, int thread2, int mode);
+static void backpropagation(struct network *net, int thread1, int thread2, int mode);
 
 static double randn(void);
 static double sigmoid(double z);
 static double sigmoid_prime(double z);
 
+static void settingmodes(struct network *net,int *threads,int maxthreads,int *mode);
+static double calculate_feedforward(struct network *net, int thread,int mode);
+static double calculate_back_pass_1(struct network *net, int thread,int mode);
+static double calculate_back_pass_2(struct network *net, int thread,int mode);
+static double calculate_backpropagation_1(struct network *net, int thread,int mode);
+static double calculate_backpropagation_2(struct network *net, int thread,int mode);
+
 /* Init network struct from configuration file */
-void init(struct network *net, char *conf_str)
+void init(struct network *net, char *conf_str,void *threads,void *mode)
 {
 	int i,j,k;
 	int before_ac_weights = 0;
@@ -64,7 +71,7 @@ void init(struct network *net, char *conf_str)
 			continue;
 
 		net->ac_weight[i] = net->layer_size[i] * net->layer_size[i+1] + before_ac_weights; //ac_weight는 여태 누적한 weight 의 갯수..
-		before_ac_weights = net->ac_weight[i]; 
+		before_ac_weights = net->ac_weight[i];
 	}
 
 	net->neuron = (double *) malloc(sizeof(double) * net->mini_batch_size * TOTAL_NEURONS(net)); //neuron 배열의 크기는 minibatch_size * 총 뉴련의 숫자
@@ -73,7 +80,14 @@ void init(struct network *net, char *conf_str)
 	net->bias = (double *) malloc(sizeof(double) * TOTAL_NEURONS(net));
 	net->weight = (double *) malloc(sizeof(double) * TOTAL_WEIGHTS(net));
 
-	// init weight with bias with random values
+    //setting threads & setting mode
+    settingmodes(net,(void *)threads,MAX_CPU,(void *)mode);
+
+    TIMER_INIT(feedforward);
+    TIMER_INIT(back_pass);
+    TIMER_INIT(backpropagation);
+
+    // init weight with bias with random values
 	for (i = 0; i < TOTAL_WEIGHTS(net); i++) {
         net->weight[i] = randn();
 	}
@@ -129,7 +143,7 @@ void reader(struct network *net)
 }
 
 // run the training
-void train(struct network *net, void *threads)
+void train(struct network *net, void *threads, void * mode)
 {
 	int i, j, k, l;
 	int nr_train = net->nr_train_data;
@@ -157,9 +171,9 @@ void train(struct network *net, void *threads)
 				ERROR(net, net->num_layer-1, k, DATA_TRAIN_A(net, s_index)) = 1.0; //error 배열에 0또는 1의값 넣습니다.
 			}
             // feedforward + back_pass      mini_batch size 만큼 다하고 함수들 실행
-            feedforward(net, thread[0]);
-            back_pass(net, thread[1], thread[2]);
-            backpropagation(net, thread[3], thread[4]);
+            feedforward(net, thread[0],mode[0]);
+            back_pass(net, thread[1], thread[2],mode[1]);
+            backpropagation(net, thread[3], thread[4],mode[2]);
 		}
 		// test per every epoch
 		recog = predict(net);
@@ -169,7 +183,7 @@ void train(struct network *net, void *threads)
 	}
 }
 
-void feedforward(struct network *net, int thread)
+void feedforward(struct network *net, int thread, int mode)
 {
 	int i, j, k, l, m;
 	double sum = 0.0;
@@ -181,8 +195,8 @@ void feedforward(struct network *net, int thread)
     int nr_chunk = thread;
     int chunk_size = (int) (net->mini_batch_size/nr_chunk); //mini_batch size를 쓰래드 갯수만큼  나눈것
 
-#if 0   /* OpenMP : without collapse */
-
+if(mode)   /* OpenMP : without collapse */
+{
 // omp_set_nested(1); // without this line is fater than with.
     for (i = 0; i < net->num_layer-1; i++)  //layer 갯수에서 하나뺀 즉, 실질적으로 한번씩 값의 전파가 일어나는 횟수
     {
@@ -214,7 +228,8 @@ void feedforward(struct network *net, int thread)
             }
         }
     }
-#elif 0   /* OpenMP : with collapse */
+}
+#if 0   /* OpenMP : with collapse */
     for (i = 0; i < net->num_layer-1; i++) {
         for (j = 0; j < nr_chunk; j++) {
             #pragma omp parallel for num_threads(100) private(m, k, l) collapse(2)
@@ -232,8 +247,10 @@ void feedforward(struct network *net, int thread)
             }
         }
     }
-#else   /* MKL */
-    double *tmp, *tmp_bias;
+#endif
+
+else   /* MKL */
+{    double *tmp, *tmp_bias;
 
     for (i = 0; i < net->num_layer-1; i++) {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, net->mini_batch_size, net->layer_size[i+1], net->layer_size[i], 1.0, (const double *)&NEURON(net, i, 0, 0),net->layer_size[i], (const double *)&WEIGHT(net, i, 0, 0), net->layer_size[i+1], 0.0,&NEURON(net, i+1, 0, 0), net->layer_size[i+1]); //weight 와 입력값을 곱해서 배열에 저장합니다.
@@ -252,19 +269,19 @@ void feedforward(struct network *net, int thread)
             for (k = 0; k < net->layer_size[i+1]; k++)
                 NEURON(net, i+1, j, k) = sigmoid(ZS(net, i+1, j, k)); //zs에  sigmoid를 취한 값을 그다음 뉴런에 저장합니다!!
     }
-#endif
+ }
 	END_TIME(feedforward);
 }
 
-void back_pass(struct network *net, int thread1, int thread2)
+void back_pass(struct network *net, int thread1, int thread2, int mode)
 {
 	int i, j, k, l;
 	double sum = 0.0;
     timeutils *back_pass = &net->t_back_pass;
 
 	START_TIME(back_pass);
-#if 0
-
+if(mode)
+{
 // calculate delta
 #pragma omp parallel for num_threads(thread1) private(i, j) collapse(2)
 	for (i = 0; i < net->mini_batch_size; i++) {
@@ -290,8 +307,10 @@ void back_pass(struct network *net, int thread1, int thread2)
 			}
 		}
 	}
-#else
+ }
 
+else
+{
     double * temp1;//neuron - error
     double * temp2;//sigmoid zs
     double * temp_error;
@@ -332,12 +351,12 @@ void back_pass(struct network *net, int thread1, int thread2)
 
         }
     }
-#endif
+}
 	END_TIME(back_pass);
 }
 
 /* Operation like backpropagation */
-void backpropagation(struct network *net, int thread1, int thread2)
+void backpropagation(struct network *net, int thread1, int thread2,int mode)
 {
 	int i, j, k, l;
     timeutils *backpropagation = &net->t_backpropagation;
@@ -356,7 +375,7 @@ void backpropagation(struct network *net, int thread1, int thread2)
 		}
 	}
 
-/*
+if(mode)
 	// update weight
 	for (i = 0; i < net->num_layer-1; i++) {
 #pragma omp parallel for num_threads(thread2) private(j, k, l) collapse(2)
@@ -370,13 +389,16 @@ void backpropagation(struct network *net, int thread1, int thread2)
 			}
 		}
 	}
- */
+
 	// update weight
-	
-	for (i = 0; i < net->num_layer-1; i++)
+else
+{
+    for (i = 0; i < net->num_layer-1; i++)
 	{
 		cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans,net->layer_size[i], net->layer_size[i+1],net->mini_batch_size, -(eta/mini), (const double *)&NEURON(net, i, 0, 0),net->layer_size[i], (const double *)&ERROR(net, i+1, 0, 0), net->layer_size[i+1], 1.0,&WEIGHT(net, i, 0, 0), net->layer_size[i+1]);
 	}
+}
+
 	END_TIME(backpropagation);
 }
 
@@ -514,4 +536,115 @@ double randn(void)
     s = sqrt( (-2 * log(s)) / s );
 
     return v1 * s;
+}
+
+
+void settingmodes(struct network *net,int *threads,int maxthreads,int *mode)
+{
+    int i;
+    double feedforward_t = -1;
+    double back_pass_t1 = -1;
+    double back_pass_t2 = -1;
+    double backpropagation_t1 = -1;
+    double backpropagation_t2 = -1;
+
+    double temp = 0;
+
+    //threads settting
+    for(i=1;i<maxthreads;i+=10)
+    {
+        temp = calculate_feedforward(net,i,1);
+        if(feedforward_t == -1 || feedforward_t > temp)
+        {
+           feedforward_t = temp;
+           threads[0] = i;
+        }
+
+        temp = calculate_back_pass_1(net,i,1);
+        if(back_pass_t1 == -1 || back_pass_t1 > temp)
+        {
+           back_pass_t1 = temp;
+           threads[1] = i;
+        }
+
+        temp = calculate_back_pass_2(net,i,1);
+        if(back_pass_t2 == -1 || back_pass_t2 > temp)
+        {
+           back_pass_t2 = temp;
+           threads[2] = i;
+        }
+
+        temp = calculate_backpropagation_1(net,i,1);
+        if(backpropagation_t1 == -1 || backpropagation_t1 > temp)
+        {
+           backpropagation_t1 = temp;
+           threads[3] = i;
+        }
+
+        temp = calculate_backpropagation_2(net,i,1);
+        if(backpropagation_t2 == -1 || backpropagation_t2 > temp)
+        {
+           backpropagation_t2 = temp;
+           threads[4] = i;
+        }
+    }
+
+    //mode select mode값들은 1으로 초기화되어 있습니다.
+
+    feedforward(net,threads[0],0);
+    temp = &feedforward->diff;
+    feedforward(net,threads[0],1);
+    if(temp < &feedforward->diff)
+        mode[0]=0;
+
+    back_pass(net,threads[1],threads[2],0);
+    temp = &back_pass->diff;
+    feedforward(net,threads[1],threads[2],1);
+    if(temp < &back_pass->diff)
+        mode[1]=0;
+
+    backpropagation(net,threads[3],threads[4],0);
+    temp = &backpropagation->diff;
+    feedforward(net,threads[3],threads[4],1);
+    if(temp < &backpropagation->diff)
+        mode[2]=0;
+}
+
+double calculate_feedforward(struct network *net, int thread,int mode)
+{
+    START_TIME(feedforward);
+    feedforward(net, thread,1);
+    END_TIME(feedforward);
+    return &feedforward->diff;
+}
+double calculate_back_pass_1(struct network *net, int thread,int mode)
+{
+    START_TIME(back_pass);
+    back_pass(net, thread,1,1);
+    END_TIME(back_pass);
+    return &back_pass->diff;
+}
+
+double calculate_back_pass_2(struct network *net, int thread,int mode)
+{
+    START_TIME(back_pass);
+    back_pass(net, 1,thread,1);
+    END_TIME(back_pass);
+    return &back_pass->diff;
+}
+
+double calculate_backpropagation_1(struct network *net, int thread,int mode)
+{
+    START_TIME(backpropagation);
+    feedforward(net, thread,1,mode);
+    END_TIME(backpropagation);
+    return &backpropagation->diff;
+}
+
+double calculate_backpropagation_2(struct network *net, int thread,int mode)
+{
+    START_TIME(backpropagation);
+    feedforward(net,1,thread,mode);
+    END_TIME(backpropagation);
+    return &backpropagation->diff;
 }
