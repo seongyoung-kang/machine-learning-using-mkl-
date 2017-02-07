@@ -23,6 +23,9 @@
 #define TOTAL_SEC_TIME(x)		(x->total.tv_sec)
 #define TOTAL_SEC_UTIME(x)		(x->total.tv_usec)
 
+#define DIFF_TIME(x)			(x ->diff.tv_usec)
+#define DIFF_TIME1(x)			(x ->diff.tv_sec)
+
 #define TIMER_ADD(x, t)		    do {                                                \
                                     timeradd(&x->total, &t->total, &t->total);      \
                                 } while(0)

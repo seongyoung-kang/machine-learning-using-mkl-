@@ -14,13 +14,16 @@ int main(int argc, char **argv)
 	char *conf_str;
 	struct network *net;
     int *threads;
+	int *modes;
 
-    params_checker(argc);
+    threads = (int *) malloc(sizeof(int) * 5);
+	modes = (int *) malloc(sizeof(int)*3);
 
-    threads = (int *) malloc(sizeof(int) * argc-1);
+    for (i = 0; i < 5; i++)
+        threads[i] = 1;
 
-    for (i = 1; i < argc; i++)
-        threads[i-1] = atoi(argv[i]); //threads 배열은 쓰래드의 숫자를 각각 저장합니다.
+	for (i=0;i<3;i++)
+		modes[i]= 1;
 
     conf_str = read_conf_file(CONF_FILE); //conf_str에 json파일내용을 집어 넣습니다.
 
@@ -30,11 +33,13 @@ int main(int argc, char **argv)
 
     reader(net); //train , test 에 input값을 넣어주는 역할을 합니다.
 
-    train(net, (void *) threads); //net에 있는 neuron 과 error에 적절한 값을 다 넣어준후 backpropagation train 을 합니다
+	setting(net,(void *)threads,(void *)modes,256);
+//
+    train(net, (void *) threads, (void *)modes); //net에 있는 neuron 과 error에 적절한 값을 다 넣어준후 backpropagation train 을 합니다
 
 //    predict(net);
 
-    report(net, (void *) threads);
+    report(net, (void *) threads,(void *)modes);
 
     free(net);
 

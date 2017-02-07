@@ -81,10 +81,11 @@ struct network {
 
 };
 
+void setting(struct network *net, void *threads, void* modes, int maxthreads);
 void init(struct network *net, char *conf_str);
 void reader(struct network *net);
-void train(struct network *net, void *threads);
+void train(struct network *net, void *threads , void *modes);
 int predict(struct network *net);
-void report(struct network *net, void *threads);
+void report(struct network *net, void *threads, void * modes);
 
 #endif /* __NETWORK_H__ */
